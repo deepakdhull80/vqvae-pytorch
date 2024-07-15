@@ -24,4 +24,4 @@ The VAE uses a loss function that combines two terms:
 2. KL Divergence: Ensures that the learned latent space distribution is close to a prior distribution (typically a standard normal distribution). It acts as a regularizer to prevent overfitting and ensures a well-structured latent space.
 
 #### References
-1. Understanding Variational Autoencoders ![Link](https://towardsdatascience.com/understanding-variational-autoencoders-vaes-f70510919f73)
+1. Understanding Variational Autoencoders [Link](https://towardsdatascience.com/understanding-variational-autoencoders-vaes-f70510919f73)
