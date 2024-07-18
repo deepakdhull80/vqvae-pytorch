@@ -95,6 +95,7 @@ if __name__ == "__main__":
     args = get_parser()
     print("Start Training")
     config_path = os.path.join("config", f"{args.config}.yaml")
+    print(f"CONFIG: {config_path}")
     assert os.path.exists(config_path), "Config file not found: {}".format(config_path)
     cfg = yaml.safe_load(open(config_path, "r"))
 
