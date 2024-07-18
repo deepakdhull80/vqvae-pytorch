@@ -1,8 +1,11 @@
 img_shape: 256
-
+random_seed: 7
 data:
-  batch_size: 8
-  num_workers: 1
+  batch_size: 4
+  num_workers: 6
+  data_prefix_path: "REPLACE_WITH_DATA_PATH"
+  augmentation_probability: 0.2
+  train_size: 0.8
 
 train:
   optim: 'SGD'
