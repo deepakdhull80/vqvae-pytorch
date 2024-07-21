@@ -65,8 +65,11 @@ def per_epoch(
             _loss = _loss.detach().cpu().item()
             loss.update(_loss)
 
-        iters.set_description(f"[{mode}] loss: {_loss: .3f} avgLoss: {loss.avg}")
-
+        if not WANDB_ENABLE:
+            iters.set_description(f"[{mode}] loss: {_loss: .3f} avgLoss: {loss.avg}")
+        else:
+            if idx % 20 == 0:
+                print(f"[{mode}] step: {idx}, loss: {_loss: .3f}, avgLoss: {loss.avg}")
     if WANDB_ENABLE:
         wandb.log({f"{mode}-loss": loss.avg})
     return loss.avg
