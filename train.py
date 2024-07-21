@@ -16,6 +16,7 @@ from helper import AverageMeter, export_model
 
 WANDB_ENABLE = False
 
+
 def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config", dest="config", required=True)
@@ -41,7 +42,7 @@ def per_epoch(
     iters = tqdm(enumerate(dl), total=len(dl))
     model = model.train() if train else model.eval()
     loss = AverageMeter()
-    
+
     mode = "Train" if train else "Eval"
     for idx, batch in iters:
         img = batch.to(device)
@@ -60,14 +61,10 @@ def per_epoch(
             _loss = _loss.detach().cpu().item()
             loss.update(_loss)
 
-        iters.set_description(
-            f"[{mode}] loss: {_loss: .3f} avgLoss: {loss.avg}"
-        )
-    
+        iters.set_description(f"[{mode}] loss: {_loss: .3f} avgLoss: {loss.avg}")
+
     if WANDB_ENABLE:
-        wandb.log({
-                    f"{mode}-loss": loss.avg
-                })
+        wandb.log({f"{mode}-loss": loss.avg})
     return loss.avg
 
 
@@ -103,7 +100,7 @@ def execute(cfg: Dict, device: str):
         if GLOBAL_VAL_LOSS > val_loss:
             GLOBAL_VAL_LOSS = val_loss
             export_model(model, cfg=cfg)
-            
+
         print(
             f"Epoch Summary: [{epoch+1}] train_loss: {train_loss: .5f}, val_loss: {val_loss: .5f}, lr: {scheduler.get_last_lr()}, GLOBAL_VAL_LOSS: {GLOBAL_VAL_LOSS: .5f}"
         )
@@ -131,11 +128,11 @@ if __name__ == "__main__":
         args.num_workers if args.num_workers else cfg["data"]["num_workers"]
     )
     cfg["data"]["epochs"] = args.epochs if args.epochs else cfg["train"]["epochs"]
-    
+
     if args.wandb_key:
         wandb.login(key=args.wandb_key)
         WANDB_ENABLE = True
-    
+
     if WANDB_ENABLE:
         wandb.init(
             # set the wandb project where this run will be logged
@@ -145,7 +142,7 @@ if __name__ == "__main__":
         )
 
     execute(cfg, args.device)
-    
+
     if WANDB_ENABLE:
         wandb.finish()
     print("Training Completed!")

@@ -52,11 +52,11 @@ class COCODataset(Dataset):
 
     def normalize_img(self, img: torch.Tensor) -> torch.Tensor:
         return (img / 255.0 - 0.5) / 0.5
-    
-    def correct_img_channels(self ,image: torch.Tensor) -> torch.Tensor:
+
+    def correct_img_channels(self, image: torch.Tensor) -> torch.Tensor:
         if len(image.shape) == 2:
             image = image.unsqueeze(0)
-            
+
         if image.shape[0] == 1:
             image = image.repeat(3, 1, 1)
         return image

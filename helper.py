@@ -2,6 +2,7 @@ from typing import Dict
 import torch
 import wandb
 
+
 class AverageMeter(object):
     """Computes and stores the average and current value"""
 
@@ -22,11 +23,11 @@ class AverageMeter(object):
 
 
 def export_model(model: torch.nn.Module, cfg: Dict):
-    torch.save(model.state_dict(), cfg['model']['export_path'])
-    artifact = wandb.Artifact(cfg['model']['name'], type='model')
-    artifact.add_file(cfg['model']['export_path'])
+    torch.save(model.state_dict(), cfg["model"]["export_path"])
+    artifact = wandb.Artifact(cfg["model"]["name"], type="model")
+    artifact.add_file(cfg["model"]["export_path"])
 
     # Log the artifact to WandB
     wandb.log_artifact(artifact)
-    
+
     print("Model checkpoint saved!")
