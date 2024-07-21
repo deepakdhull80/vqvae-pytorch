@@ -14,6 +14,7 @@ from module.data import get_dataloader
 from module.loss import ReconstructionLoss
 from helper import AverageMeter
 
+
 def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config", dest="config", required=True)
@@ -103,20 +104,28 @@ if __name__ == "__main__":
     print(f"CONFIG: {config_path}")
     assert os.path.exists(config_path), "Config file not found: {}".format(config_path)
     cfg = yaml.safe_load(open(config_path, "r"))
-    
-    cfg['data']['data_prefix_path'] = args.data_path if args.data_path else cfg['data']['data_prefix_path']
-    assert os.path.exists(cfg['data']['data_prefix_path']), "Config file not found: {}".format(cfg['data']['data_prefix_data'])
-    
-    cfg['data']['batch_size'] = args.batch_size if args.batch_size else cfg['data']['batch_size']
-    cfg['data']['num_workers'] = args.num_workers if args.num_workers else cfg['data']['num_workers']
-    cfg['data']['epochs'] = args.epochs if args.epochs else cfg['data']['epochs']
-    
+
+    cfg["data"]["data_prefix_path"] = (
+        args.data_path if args.data_path else cfg["data"]["data_prefix_path"]
+    )
+    assert os.path.exists(
+        cfg["data"]["data_prefix_path"]
+    ), "Config file not found: {}".format(cfg["data"]["data_prefix_data"])
+
+    cfg["data"]["batch_size"] = (
+        args.batch_size if args.batch_size else cfg["data"]["batch_size"]
+    )
+    cfg["data"]["num_workers"] = (
+        args.num_workers if args.num_workers else cfg["data"]["num_workers"]
+    )
+    cfg["data"]["epochs"] = args.epochs if args.epochs else cfg["data"]["epochs"]
+
     wandb.init(
         # set the wandb project where this run will be logged
         project=f"{cfg['model']['name']}-project",
         # track hyperparameters and run metadata
-        config=cfg
+        config=cfg,
     )
-    
+
     execute(cfg, args.device)
     print("Training Completed!")
