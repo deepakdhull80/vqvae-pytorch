@@ -12,8 +12,9 @@ import wandb
 from module.vae import AutoEncoder
 from module.data import get_dataloader
 from module.loss import ReconstructionLoss
-from helper import AverageMeter
+from helper import AverageMeter, export_model
 
+WANDB_ENABLE = False
 
 def get_parser():
     parser = argparse.ArgumentParser()
@@ -21,8 +22,9 @@ def get_parser():
     parser.add_argument("-d", "--device", dest="device", default="cpu")
     parser.add_argument("-p", "--data-path", dest="data_path")
     parser.add_argument("-b", "--batch-size", dest="batch_size", type=int)
-    parser.add_argument("-n", "--num-worker", dest="num_worker", type=int)
+    parser.add_argument("-n", "--num-worker", dest="num_workers", type=int)
     parser.add_argument("-e", "--epochs", dest="epochs", type=int)
+    parser.add_argument("-w", "--wandb-key", dest="wandb_key", type=str)
 
     args = parser.parse_args()
     return args
@@ -38,7 +40,8 @@ def per_epoch(
 ):
     iters = tqdm(enumerate(dl), total=len(dl))
     model = model.train() if train else model.eval()
-    loss = 0
+    loss = AverageMeter()
+    
     mode = "Train" if train else "Eval"
     for idx, batch in iters:
         img = batch.to(device)
@@ -54,12 +57,18 @@ def per_epoch(
 
         with torch.no_grad():
             # compute metrics
-            loss += _loss.detach().cpu().item()
+            _loss = _loss.detach().cpu().item()
+            loss.update(_loss)
 
         iters.set_description(
-            f"[{mode}] loss: {_loss.detach().cpu().item(): .3f} avgLoss: {loss/(idx+1)}"
+            f"[{mode}] loss: {_loss: .3f} avgLoss: {loss.avg}"
         )
-    return loss / len(dl)
+    
+    if WANDB_ENABLE:
+        wandb.log({
+                    f"{mode}-loss": loss.avg
+                })
+    return loss.avg
 
 
 def execute(cfg: Dict, device: str):
@@ -80,7 +89,7 @@ def execute(cfg: Dict, device: str):
     )
 
     loss_fn = ReconstructionLoss()
-
+    GLOBAL_VAL_LOSS = 1e4
     # execute pipeline
     for epoch in range(cfg["train"]["epochs"]):
         print(f"Epoch: {epoch+1}")
@@ -88,12 +97,15 @@ def execute(cfg: Dict, device: str):
         train_loss = per_epoch(model, train_dl, optimizer, loss_fn, device, True)
         print("Start Validating Step")
         val_loss = per_epoch(model, val_dl, optimizer, loss_fn, device, False)
-        scheduler.step(epoch + 1)
+        scheduler.step()
 
         # TODO: Save checkpoint
-
+        if GLOBAL_VAL_LOSS > val_loss:
+            GLOBAL_VAL_LOSS = val_loss
+            export_model(model, cfg=cfg)
+            
         print(
-            f"Epoch Summary: [{epoch+1}] train_loss: {train_loss: .3f}, val_loss: {val_loss: .3f}, lr: {scheduler.get_lr()}"
+            f"Epoch Summary: [{epoch+1}] train_loss: {train_loss: .5f}, val_loss: {val_loss: .5f}, lr: {scheduler.get_last_lr()}, GLOBAL_VAL_LOSS: {GLOBAL_VAL_LOSS: .5f}"
         )
 
 
@@ -118,14 +130,22 @@ if __name__ == "__main__":
     cfg["data"]["num_workers"] = (
         args.num_workers if args.num_workers else cfg["data"]["num_workers"]
     )
-    cfg["data"]["epochs"] = args.epochs if args.epochs else cfg["data"]["epochs"]
-
-    wandb.init(
-        # set the wandb project where this run will be logged
-        project=f"{cfg['model']['name']}-project",
-        # track hyperparameters and run metadata
-        config=cfg,
-    )
+    cfg["data"]["epochs"] = args.epochs if args.epochs else cfg["train"]["epochs"]
+    
+    if args.wandb_key:
+        wandb.login(key=args.wandb_key)
+        WANDB_ENABLE = True
+    
+    if WANDB_ENABLE:
+        wandb.init(
+            # set the wandb project where this run will be logged
+            project=f"{cfg['model']['name']}-project",
+            # track hyperparameters and run metadata
+            config=cfg,
+        )
 
     execute(cfg, args.device)
+    
+    if WANDB_ENABLE:
+        wandb.finish()
     print("Training Completed!")

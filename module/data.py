@@ -52,11 +52,20 @@ class COCODataset(Dataset):
 
     def normalize_img(self, img: torch.Tensor) -> torch.Tensor:
         return (img / 255.0 - 0.5) / 0.5
+    
+    def correct_img_channels(self ,image: torch.Tensor) -> torch.Tensor:
+        if len(image.shape) == 2:
+            image = image.unsqueeze(0)
+            
+        if image.shape[0] == 1:
+            image = image.repeat(3, 1, 1)
+        return image
 
     def __getitem__(self, index):
         file = self.image_list[index]
         path = f"{self.data_prefix_path}/{file}"
         img = torchvision.io.read_image(path)
+        img = self.correct_img_channels(img)
         img = self.transform(img)
         img = img.float()
         img = self.normalize_img(img)
@@ -90,7 +99,7 @@ def get_dataloader(cfg: Dict) -> Tuple[DataLoader, DataLoader]:
     train_dl = DataLoader(
         train_ds,
         batch_size=cfg["data"]["batch_size"],
-        # collate_fn=custom_collate_fn,
+        collate_fn=custom_collate_fn,
         shuffle=True,
         num_workers=cfg["data"]["num_workers"],
         pin_memory=True,
@@ -98,7 +107,7 @@ def get_dataloader(cfg: Dict) -> Tuple[DataLoader, DataLoader]:
     val_dl = DataLoader(
         val_ds,
         batch_size=cfg["data"]["batch_size"],
-        # collate_fn=custom_collate_fn,
+        collate_fn=custom_collate_fn,
         num_workers=cfg["data"]["num_workers"],
         pin_memory=True,
     )

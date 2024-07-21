@@ -1,8 +1,8 @@
-img_shape: 256
+img_shape: 64
 random_seed: 7
 data:
-  batch_size: 4
-  num_workers: 6
+  batch_size: 128
+  num_workers: 10
   data_prefix_path: "REPLACE_WITH_DATA_PATH"
   augmentation_probability: 0.2
   train_size: 0.8
@@ -10,12 +10,13 @@ data:
 train:
   optim: 'SGD'
   lr: 0.0001
-  epochs: 10
+  epochs: 20
   scheduler:
     eta_min: 0.000001
 
 model:
   name: "auto-encoder"
+  export_path: "/tmp/model.pt"
   latent_dim: 1024
   final_activation: "tanh"
   encoder:
