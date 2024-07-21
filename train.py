@@ -26,7 +26,7 @@ logging.basicConfig(level=logging.INFO,
 
 def custom_print(message):
     print(message)  # Print to notebook cell
-    custom_print(message)
+    logging.info(message)
 
 def get_parser():
     parser = argparse.ArgumentParser()
