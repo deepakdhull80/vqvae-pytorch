@@ -17,7 +17,7 @@ from helper import AverageMeter, export_model
 
 ####################
 WANDB_ENABLE = False
-logging.basicConfig(level=custom_print, 
+logging.basicConfig(level=logging.INFO, 
                     format='%(asctime)s - %(levelname)s - %(message)s',
                     handlers=[
                         logging.FileHandler("output.log")
