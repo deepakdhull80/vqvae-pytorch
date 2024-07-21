@@ -14,14 +14,22 @@ from module.vae import AutoEncoder
 from module.data import get_dataloader
 from module.loss import ReconstructionLoss
 from helper import AverageMeter, export_model
+from IPython.display import display, HTML
 
 ####################
 WANDB_ENABLE = False
+
+class NotebookHandler(logging.Handler):
+    def emit(self, record):
+        log_entry = self.format(record)
+        display(HTML(f"<div style='color: red;'>{log_entry}</div>"))
+
 logging.basicConfig(level=logging.INFO, 
                     format='%(asctime)s - %(levelname)s - %(message)s',
                     handlers=[
                         logging.FileHandler("output.log"),
-                        logging.StreamHandler()
+                        logging.StreamHandler(),
+                        NotebookHandler()
                     ])
 ####################
 
