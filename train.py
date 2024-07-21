@@ -39,7 +39,11 @@ def per_epoch(
     device: str,
     train: bool = True,
 ):
-    iters = tqdm(enumerate(dl), total=len(dl))
+    if not WANDB_ENABLE:
+        iters = tqdm(enumerate(dl), total=len(dl))
+    else:
+        iters = enumerate(dl)
+    
     model = model.train() if train else model.eval()
     loss = AverageMeter()
 
