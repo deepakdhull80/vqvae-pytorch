@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Dict, Tuple
 import argparse
@@ -14,7 +15,15 @@ from module.data import get_dataloader
 from module.loss import ReconstructionLoss
 from helper import AverageMeter, export_model
 
+####################
 WANDB_ENABLE = False
+logging.basicConfig(level=logging.INFO, 
+                    format='%(asctime)s - %(levelname)s - %(message)s',
+                    handlers=[
+                        logging.FileHandler("output.log"),
+                        logging.StreamHandler()
+                    ])
+####################
 
 
 def get_parser():
@@ -69,7 +78,7 @@ def per_epoch(
             iters.set_description(f"[{mode}] loss: {_loss: .3f} avgLoss: {loss.avg}")
         else:
             if idx % 20 == 0:
-                print(f"[{mode}] step: {idx}, loss: {_loss: .3f}, avgLoss: {loss.avg}")
+                logging.info(f"[{mode}] step: {idx}, loss: {_loss: .3f}, avgLoss: {loss.avg}")
     if WANDB_ENABLE:
         wandb.log({f"{mode}-loss": loss.avg})
     return loss.avg
@@ -96,10 +105,10 @@ def execute(cfg: Dict, device: str):
     GLOBAL_VAL_LOSS = 1e4
     # execute pipeline
     for epoch in range(cfg["train"]["epochs"]):
-        print(f"Epoch: {epoch+1}")
-        print("Start Training Step")
+        logging.info(f"Epoch: {epoch+1}")
+        logging.info("Start Training Step")
         train_loss = per_epoch(model, train_dl, optimizer, loss_fn, device, True)
-        print("Start Validating Step")
+        logging.info("Start Validating Step")
         val_loss = per_epoch(model, val_dl, optimizer, loss_fn, device, False)
         scheduler.step()
 
@@ -108,16 +117,16 @@ def execute(cfg: Dict, device: str):
             GLOBAL_VAL_LOSS = val_loss
             export_model(model, cfg=cfg)
 
-        print(
+        logging.info(
             f"Epoch Summary: [{epoch+1}] train_loss: {train_loss: .5f}, val_loss: {val_loss: .5f}, lr: {scheduler.get_last_lr()}, GLOBAL_VAL_LOSS: {GLOBAL_VAL_LOSS: .5f}"
         )
 
 
 if __name__ == "__main__":
     args = get_parser()
-    print("Start Training")
+    logging.info("Start Training")
     config_path = os.path.join("config", f"{args.config}.yaml")
-    print(f"CONFIG: {config_path}")
+    logging.info(f"CONFIG: {config_path}")
     assert os.path.exists(config_path), "Config file not found: {}".format(config_path)
     cfg = yaml.safe_load(open(config_path, "r"))
 
@@ -152,4 +161,4 @@ if __name__ == "__main__":
 
     if WANDB_ENABLE:
         wandb.finish()
-    print("Training Completed!")
+    logging.info("Training Completed!")

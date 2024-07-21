@@ -166,3 +166,4 @@ cython_debug/
 config/test_*.yaml
 *.env
 wandb
+*.log
