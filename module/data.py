@@ -27,28 +27,36 @@ class RandomDataset(Dataset):
 
 
 class Transformer(object):
-    def __init__(self, cfg: Dict) -> None:
-        self.augments = Compose(
-            [
-                Resize(size=(cfg["img_shape"], cfg["img_shape"]), antialias=True),
-                RandomHorizontalFlip(p=cfg["data"]["augmentation_probability"]),
-                RandomVerticalFlip(p=cfg["data"]["augmentation_probability"]),
-                RandomAdjustSharpness(2, p=cfg["data"]["augmentation_probability"]),
-                RandomAutocontrast(p=cfg["data"]["augmentation_probability"]),
-            ]
-        )
+    def __init__(self, cfg: Dict, flag: bool = False) -> None:
+
+        if not flag:
+            self.augments = Compose(
+                [
+                    Resize(size=(cfg["img_shape"], cfg["img_shape"]), antialias=True),
+                    RandomHorizontalFlip(p=cfg["data"]["augmentation_probability"]),
+                    RandomVerticalFlip(p=cfg["data"]["augmentation_probability"]),
+                    RandomAdjustSharpness(2, p=cfg["data"]["augmentation_probability"]),
+                    RandomAutocontrast(p=cfg["data"]["augmentation_probability"]),
+                ]
+            )
+        else:
+            self.augments = Compose(
+                [Resize(size=(cfg["img_shape"], cfg["img_shape"]), antialias=True)]
+            )
 
     def __call__(self, x: torch.Tensor):
         return self.augments(x)
 
 
 class COCODataset(Dataset):
-    def __init__(self, cfg: Dict, image_list: List) -> None:
+    def __init__(
+        self, cfg: Dict, image_list: List, disable_tansforms: bool = False
+    ) -> None:
         super().__init__()
         self.cfg = cfg
         self.data_prefix_path = cfg["data"]["data_prefix_path"]
         self.image_list = image_list
-        self.transform = Transformer(cfg)
+        self.transform = Transformer(cfg, flag=disable_tansforms)
 
     def normalize_img(self, img: torch.Tensor) -> torch.Tensor:
         return (img / 255.0 - 0.5) / 0.5
