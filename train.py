@@ -17,16 +17,18 @@ from helper import AverageMeter, export_model
 
 ####################
 WANDB_ENABLE = False
-logging.basicConfig(level=logging.INFO, 
-                    format='%(asctime)s - %(levelname)s - %(message)s',
-                    handlers=[
-                        logging.FileHandler("output.log")
-                    ])
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[logging.FileHandler("output.log")],
+)
 ####################
+
 
 def custom_print(message):
     print(message)  # Print to notebook cell
     logging.info(message)
+
 
 def get_parser():
     parser = argparse.ArgumentParser()
@@ -54,7 +56,7 @@ def per_epoch(
         iters = tqdm(enumerate(dl), total=len(dl))
     else:
         iters = enumerate(dl)
-    
+
     model = model.train() if train else model.eval()
     loss = AverageMeter()
 
@@ -80,7 +82,9 @@ def per_epoch(
             iters.set_description(f"[{mode}] loss: {_loss: .3f} avgLoss: {loss.avg}")
         else:
             if idx % 50 == 0:
-                custom_print(f"[{mode}] step: {idx}, loss: {_loss: .3f}, avgLoss: {loss.avg}")
+                custom_print(
+                    f"[{mode}] step: {idx}, loss: {_loss: .3f}, avgLoss: {loss.avg}"
+                )
                 if WANDB_ENABLE:
                     wandb.log({f"{mode}-step-loss": loss.avg})
     if WANDB_ENABLE:

@@ -8,9 +8,9 @@ data:
   train_size: 0.8
 
 train:
-  optim: 'SGD'
-  lr: 0.0001
-  epochs: 20
+  optim: 'AdamW'
+  lr: 0.001
+  epochs: 50
   scheduler:
     eta_min: 0.000001
 

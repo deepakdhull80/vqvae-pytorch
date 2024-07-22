@@ -19,18 +19,22 @@ from IPython.display import display, HTML
 ####################
 WANDB_ENABLE = False
 
+
 class NotebookHandler(logging.Handler):
     def emit(self, record):
         log_entry = self.format(record)
         display(HTML(f"<div style='color: red;'>{log_entry}</div>"))
 
-logging.basicConfig(level=logging.INFO, 
-                    format='%(asctime)s - %(levelname)s - %(message)s',
-                    handlers=[
-                        logging.FileHandler("output.log"),
-                        logging.StreamHandler(),
-                        NotebookHandler()
-                    ])
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler("output.log"),
+        logging.StreamHandler(),
+        NotebookHandler(),
+    ],
+)
 ####################
 
 
@@ -60,7 +64,7 @@ def per_epoch(
         iters = tqdm(enumerate(dl), total=len(dl))
     else:
         iters = enumerate(dl)
-    
+
     model = model.train() if train else model.eval()
     loss = AverageMeter()
 
@@ -86,7 +90,9 @@ def per_epoch(
             iters.set_description(f"[{mode}] loss: {_loss: .3f} avgLoss: {loss.avg}")
         else:
             if idx % 50 == 0:
-                logging.info(f"[{mode}] step: {idx}, loss: {_loss: .3f}, avgLoss: {loss.avg}")
+                logging.info(
+                    f"[{mode}] step: {idx}, loss: {_loss: .3f}, avgLoss: {loss.avg}"
+                )
                 if WANDB_ENABLE:
                     wandb.log({f"{mode}-step-loss": loss.avg})
     if WANDB_ENABLE:
