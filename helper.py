@@ -22,12 +22,12 @@ class AverageMeter(object):
         self.avg = self.sum / self.count
 
 
-def export_model(model: torch.nn.Module, cfg: Dict):
+def export_model(model: torch.nn.Module, cfg: Dict, without_wandb: bool = False):
     torch.save(model.state_dict(), cfg["model"]["export_path"])
-    artifact = wandb.Artifact(cfg["model"]["name"], type="model")
-    artifact.add_file(cfg["model"]["export_path"])
-
-    # Log the artifact to WandB
-    wandb.log_artifact(artifact)
+    if not without_wandb:
+        artifact = wandb.Artifact(cfg["model"]["name"], type="model")
+        artifact.add_file(cfg["model"]["export_path"])
+        # Log the artifact to WandB
+        wandb.log_artifact(artifact)
 
     print("Model checkpoint saved!")

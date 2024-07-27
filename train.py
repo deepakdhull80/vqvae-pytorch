@@ -15,6 +15,7 @@ from module.data import get_dataloader
 from module.loss import ReconstructionLoss
 from module.constant import ModelEnum
 from helper import AverageMeter, export_model
+from scripts.generate import ModelHelper
 
 ####################
 WANDB_ENABLE = False
@@ -120,6 +121,7 @@ def execute(cfg: Dict, device: str):
 
     loss_fn = ReconstructionLoss()
     GLOBAL_VAL_LOSS = 1e4
+    train_loss, val_loss = 0, 0
     # execute pipeline
     for epoch in range(cfg["train"]["epochs"]):
         custom_print(f"Epoch: {epoch+1}")
@@ -132,7 +134,13 @@ def execute(cfg: Dict, device: str):
         # TODO: Save checkpoint
         if GLOBAL_VAL_LOSS > val_loss:
             GLOBAL_VAL_LOSS = val_loss
-            export_model(model, cfg=cfg)
+            export_model(model, cfg=cfg, without_wandb=not WANDB_ENABLE)
+            if cfg["generate_samples"]:
+                model_helper = ModelHelper(
+                    cfg=cfg, model_chkpt_path=cfg["model"]["export_path"], device="cpu"
+                )
+                model_helper.refresh_weights(model)
+                model_helper.generate_and_save(n_items=4, file_prefix=epoch)
 
         logging.info(
             f"Epoch Summary: [{epoch+1}] train_loss: {train_loss: .5f}, val_loss: {val_loss: .5f}, lr: {scheduler.get_last_lr()}, GLOBAL_VAL_LOSS: {GLOBAL_VAL_LOSS: .5f}"

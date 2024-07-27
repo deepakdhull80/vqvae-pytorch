@@ -1,5 +1,6 @@
 img_shape: 64
 random_seed: 7
+generate_samples: false
 data:
   batch_size: 128
   num_workers: 10
