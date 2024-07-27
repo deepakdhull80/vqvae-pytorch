@@ -38,13 +38,15 @@ python train.py -c CONFIG_PATH -d cuda:0 -p DATA_PATH -b BATCH_SIZE -n NUM_WORKE
 ```
 
 ## TODO:
-    - [] Variational AutoEncoder
     - [] Vector Quantized Variational AutoEncoder
+    - [] Image completion task
+    - [] Sketch to Realistic Image Generation
 
 ## Completed:
     - [x] Code Base is ready to test different architectures
     - [x] Tried Auto Encoder: Able to see decent results only in compressed image generation, but it failed to generate any image from random noise.
     - [x] Generator script created.
+    - [x] Variational AutoEncoder
 
 #### References
 1. Understanding Variational Autoencoders [Link](https://towardsdatascience.com/understanding-variational-autoencoders-vaes-f70510919f73)
