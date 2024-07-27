@@ -168,3 +168,5 @@ config/test_*.yaml
 wandb
 *.log
 artifacts
+output
+checkpoints

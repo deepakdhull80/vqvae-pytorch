@@ -2,3 +2,4 @@ torch
 torchvision
 pyaml
 wandb
+mmh3
