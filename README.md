@@ -24,6 +24,12 @@ The VAE uses a loss function that combines two terms:
 
 ## Commands:
 
+#### Clone repo
+```bash
+git clone https://github.com/deepakdhull80/vqvae-pytorch.git
+cd vqvae-pytorch
+```
+
 #### Start single GPU training
 ```bash
 python train.py -c CONFIG_PATH -d cuda:0 -p DATA_PATH -b BATCH_SIZE -n NUM_WORKERS -e EPOCHS
