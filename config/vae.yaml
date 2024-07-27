@@ -15,7 +15,7 @@ train:
     eta_min: 0.000001
 
 model:
-  name: "auto-encoder"
+  name: "variational-auto-encoder"
   export_path: "/tmp/model.pt"
   latent_dim: 1024
   final_activation: "tanh"

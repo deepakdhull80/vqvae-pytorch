@@ -2,7 +2,9 @@
 
 ## 1. Variational Autoencoder
 
-A Variational Autoencoder (VAE) is a type of generative model that combines neural networks and probabilistic modeling to learn a latent representation of input data and generate new, similar data.
+A Variational Autoencoder (VAE) is a type of generative model that combines neural networks and probabilistic modeling to learn a latent representation of input data and generate new, similar data. Autoencoder whose training is regularised to avoid overfitting and ensure that the latent space has good properties that enable generative process.
+
+![alt variational-autoencoder](images/variational-autoencoder.png)
 
 #### Encoder:
 
@@ -42,6 +44,7 @@ python train.py -c CONFIG_PATH -d cuda:0 -p DATA_PATH -b BATCH_SIZE -n NUM_WORKE
 ## Completed:
     - [x] Code Base is ready to test different architectures
     - [x] Tried Auto Encoder: Able to see decent results only in compressed image generation, but it failed to generate any image from random noise.
+    - [x] Generator script created.
 
 #### References
 1. Understanding Variational Autoencoders [Link](https://towardsdatascience.com/understanding-variational-autoencoders-vaes-f70510919f73)

@@ -10,9 +10,10 @@ import torch.nn as nn
 from tqdm import tqdm
 import wandb
 
-from module.vae import AutoEncoder
+from module.vae import AutoEncoder, VariationalAutoEncoder
 from module.data import get_dataloader
 from module.loss import ReconstructionLoss
+from module.constant import ModelEnum
 from helper import AverageMeter, export_model
 
 ####################
@@ -94,7 +95,15 @@ def per_epoch(
 
 def execute(cfg: Dict, device: str):
     # load model
-    model = AutoEncoder(cfg)
+
+    if ModelEnum.AUTO_ENCODER.value == cfg["model"]["name"]:
+        model = AutoEncoder(cfg)
+    elif ModelEnum.VARIATIONAL_AUTO_ENCODER.value == cfg["model"]["name"]:
+        model = VariationalAutoEncoder(cfg)
+    else:
+        raise ValueError(
+            f"Model {cfg['model']['name']} not supported. Available models are {ModelEnum.list()}"
+        )
     model = model.to(device)
 
     # load dataloader

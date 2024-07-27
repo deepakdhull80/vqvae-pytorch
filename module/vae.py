@@ -78,9 +78,91 @@ class Decoder(nn.Module):
             out = (
                 encoder_flatten_size if i == 0 else cfg["model"]["encoder"]["fc"][i - 1]
             )
+            _in = cfg["model"]["encoder"]["fc"][i]
             fc_layers.append(
                 nn.Sequential(
-                    nn.Linear(cfg["model"]["encoder"]["fc"][i], out, bias=True),
+                    nn.Linear(_in, out, bias=True),
+                    nn.LayerNorm(out),
+                    nn.ReLU(),
+                )
+            )
+        self.fc = nn.Sequential(*fc_layers)
+
+        layers = []
+        self.final_conv_channels = inp_channel = cfg["model"]["encoder"][
+            "conv_channels"
+        ][-1]
+        self.latent_space_img_size = int(
+            math.sqrt(encoder_flatten_size / self.final_conv_channels)
+        )
+        final_shape = self.latent_space_img_size
+
+        for i in range(len(cfg["model"]["decoder"]["conv_channels"])):
+            layers.append(
+                nn.Sequential(
+                    nn.ConvTranspose2d(
+                        in_channels=inp_channel,
+                        out_channels=cfg["model"]["decoder"]["conv_channels"][i],
+                        kernel_size=cfg["model"]["decoder"]["kernels"][i],
+                        stride=cfg["model"]["decoder"]["strides"][i],
+                        bias=False,
+                    ),
+                    get_activation(cfg["model"]["decoder"]["activation"][i]),
+                    (
+                        nn.BatchNorm2d(cfg["model"]["decoder"]["conv_channels"][i])
+                        if cfg["model"]["decoder"]["norm"][i]
+                        else nn.Identity()
+                    ),
+                )
+            )
+            inp_channel = cfg["model"]["decoder"]["conv_channels"][i]
+            final_shape = calculate_conv_transpose_output(
+                final_shape,
+                kernel=cfg["model"]["decoder"]["kernels"][i],
+                stride=cfg["model"]["decoder"]["strides"][i],
+            )
+
+        self.layers = nn.Sequential(*layers)
+        # self.layers = nn.ModuleList(layers)
+
+    def forward(self, x):
+        b, _ = x.shape
+        x = self.fc(x)
+        x = x.view(
+            b,
+            self.final_conv_channels,
+            self.latent_space_img_size,
+            self.latent_space_img_size,
+        ).contiguous()
+        # debug code
+        # for mod in self.layers:
+        #     x = mod(x)
+        #     print("layer output:", x.shape)
+
+        x = self.layers(x)
+        return x
+
+
+class VariationDecoder(nn.Module):
+    def __init__(self, cfg: Dict, encoder_flatten_size: int):
+        super().__init__()
+        self.cfg = cfg
+        self.encoder_flatten_size = encoder_flatten_size
+
+        fc_layers = []
+        inp = cfg["model"]["latent_dim"]
+        for i in range(len(cfg["model"]["encoder"]["fc"]) - 1, -1, -1):
+            out = (
+                encoder_flatten_size if i == 0 else cfg["model"]["encoder"]["fc"][i - 1]
+            )
+            _in = (
+                cfg["model"]["encoder"]["fc"][i] * 2
+                if len(cfg["model"]["encoder"]["fc"]) == i + 1
+                else 1
+            )
+            fc_layers.append(
+                nn.Sequential(
+                    nn.Linear(_in, out, bias=True),
                     nn.LayerNorm(out),
                     nn.ReLU(),
                 )
@@ -159,6 +241,29 @@ class VariationalAutoEncoder(nn.Module):
     def __init__(self, cfg: Dict):
         super().__init__()
         self.cfg = cfg
+        self.encoder = Encoder(cfg)
+        self.mu_fc = nn.Linear(
+            self.cfg["model"]["latent_dim"], self.cfg["model"]["latent_dim"], bias=False
+        )
+        self.log_var_fc = nn.Linear(
+            self.cfg["model"]["latent_dim"], self.cfg["model"]["latent_dim"], bias=False
+        )
+        self.decoder = VariationDecoder(cfg, self.encoder.flatten_size)
 
-    def forward(self, x):
+    def reparameterization(self, z: torch.Tensor) -> torch.Tensor:
+        device = z.device
+        mu = self.mu_fc(z)
+        log_var = self.log_var_fc(z)
+        epsilon = torch.rand_like(z).to(device)
+        sigma = torch.exp(0.5 * log_var)
+        z = mu + sigma * epsilon
+        return z
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        device = x.device
+        z = self.encoder(x)
+        z = self.reparameterization(z)
+        y = torch.rand_like(z).to(device)
+        z = torch.concat([z, y], dim=1)
+        x = self.decoder(z)
         return x
