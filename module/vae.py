@@ -258,8 +258,7 @@ class VariationalAutoEncoder(nn.Module):
         sigma = torch.exp(0.5 * log_var)
         z = mu + sigma * epsilon
         
-        kl_loss = (sigma ** 2 + mu ** 2 
-                    - torch.log(sigma) - 0.5).sum()
+        kl_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=1))
         return z, kl_loss
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
