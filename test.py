@@ -60,7 +60,7 @@ class AutoEncoderTest(TestCaseWrapper):
 
         model = AutoEncoder(self.cfg)
         img_tensor = torch.randn(2, 3, self.cfg["img_shape"], self.cfg["img_shape"])
-        out = model(img_tensor)
+        out, _ = model(img_tensor)
         assert (
             out.size() == img_tensor.size()
         ), "model output ({}) not matched with given image tensor ({})".format(

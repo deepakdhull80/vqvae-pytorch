@@ -14,6 +14,7 @@ train:
   epochs: 50
   scheduler:
     eta_min: 0.000001
+  kl_loss_weight: 0.2
 
 model:
   name: "variational-auto-encoder"

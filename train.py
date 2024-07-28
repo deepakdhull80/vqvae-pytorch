@@ -47,6 +47,7 @@ def get_parser():
 
 
 def per_epoch(
+    cfg: Dict,
     model: nn.Module,
     dl: torch.utils.data.DataLoader,
     optimizer: torch.optim.Optimizer,
@@ -65,15 +66,19 @@ def per_epoch(
     mode = "Train" if train else "Eval"
     for idx, batch in iters:
         img = batch.to(device)
-        pred = model(img)
+        pred, kl_loss = model(img)
         if train:
             _loss: torch.Tensor = loss_fn(pred, img)
+            if kl_loss:
+                _loss = (1 - cfg['train']['kl_loss_weight']) * _loss + cfg['train']['kl_loss_weight'] * kl_loss
             optimizer.zero_grad()
             _loss.backward()
             optimizer.step()
         else:
             with torch.no_grad():
                 _loss: torch.Tensor = loss_fn(pred, img)
+                if kl_loss:
+                    _loss = (1 - cfg['train']['kl_loss_weight']) * _loss + cfg['train']['kl_loss_weight'] * kl_loss
 
         with torch.no_grad():
             # compute metrics
@@ -126,9 +131,9 @@ def execute(cfg: Dict, device: str):
     for epoch in range(cfg["train"]["epochs"]):
         custom_print(f"Epoch: {epoch+1}")
         custom_print("Start Training Step")
-        train_loss = per_epoch(model, train_dl, optimizer, loss_fn, device, True)
+        train_loss = per_epoch(cfg, model, train_dl, optimizer, loss_fn, device, True)
         logging.info("Start Validating Step")
-        val_loss = per_epoch(model, val_dl, optimizer, loss_fn, device, False)
+        val_loss = per_epoch(cfg, model, val_dl, optimizer, loss_fn, device, False)
         scheduler.step()
 
         # TODO: Save checkpoint

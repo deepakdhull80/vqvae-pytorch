@@ -234,7 +234,7 @@ class AutoEncoder(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         z = self.encoder(x)
         x = self.decoder(z)
-        return x
+        return x, None
 
 
 class VariationalAutoEncoder(nn.Module):
@@ -257,13 +257,16 @@ class VariationalAutoEncoder(nn.Module):
         epsilon = torch.rand_like(z).to(device)
         sigma = torch.exp(0.5 * log_var)
         z = mu + sigma * epsilon
-        return z
+        
+        kl_loss = (sigma ** 2 + mu ** 2 
+                    - torch.log(sigma) - 0.5).sum()
+        return z, kl_loss
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         device = x.device
         z = self.encoder(x)
-        z = self.reparameterization(z)
+        z, kl_loss = self.reparameterization(z)
         y = torch.rand_like(z).to(device)
         z = torch.concat([z, y], dim=1)
         x = self.decoder(z)
-        return x
+        return x, kl_loss
