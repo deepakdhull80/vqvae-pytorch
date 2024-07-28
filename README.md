@@ -1,6 +1,6 @@
 # Vector Quantized Variational Autoencoder
 
-## 1. Variational Autoencoder
+## About: Variational Autoencoder
 
 A Variational Autoencoder (VAE) is a type of generative model that combines neural networks and probabilistic modeling to learn a latent representation of input data and generate new, similar data. Autoencoder whose training is regularised to avoid overfitting and ensure that the latent space has good properties that enable generative process.
 
@@ -32,9 +32,43 @@ git clone https://github.com/deepakdhull80/vqvae-pytorch.git
 cd vqvae-pytorch
 ```
 
+#### Training Script
+```
+usage: train.py [-h] -c CONFIG [-d DEVICE] [-p DATA_PATH] [-b BATCH_SIZE]
+                [-n NUM_WORKERS] [-e EPOCHS] [-w WANDB_KEY]
+
+options:
+  -h, --help            show this help message and exit
+  -c CONFIG, --config CONFIG
+  -d DEVICE, --device DEVICE
+  -p DATA_PATH, --data-path DATA_PATH
+  -b BATCH_SIZE, --batch-size BATCH_SIZE
+  -n NUM_WORKERS, --num-worker NUM_WORKERS
+  -e EPOCHS, --epochs EPOCHS
+  -w WANDB_KEY, --wandb-key WANDB_KEY
+```
+
 #### Start single GPU training
+Varitaional AutoEncoder
 ```bash
-python train.py -c CONFIG_PATH -d cuda:0 -p DATA_PATH -b BATCH_SIZE -n NUM_WORKERS -e EPOCHS
+python train.py \
+    --config vae \
+    --device cuda \
+    --data-path /kaggle/input/coco-2017-dataset/coco2017/train2017 \
+    --epochs 50 \
+    --num-worker 4 \
+    --batch-size 256
+```
+
+Conditional Varitaional AutoEncoder
+```bash
+python train.py \
+    --config conditional_vae \
+    --device cuda \
+    --data-path /kaggle/input/coco-2017-dataset/coco2017 \
+    --epochs 50 \
+    --num-worker 4 \
+    --batch-size 256
 ```
 
 ## TODO:
@@ -47,6 +81,7 @@ python train.py -c CONFIG_PATH -d cuda:0 -p DATA_PATH -b BATCH_SIZE -n NUM_WORKE
     - [x] Tried Auto Encoder: Able to see decent results only in compressed image generation, but it failed to generate any image from random noise.
     - [x] Generator script created.
     - [x] Variational AutoEncoder
+    - [x] Conditional Variation Autoencoder
 
-#### References
+### References
 1. Understanding Variational Autoencoders [Link](https://towardsdatascience.com/understanding-variational-autoencoders-vaes-f70510919f73)
