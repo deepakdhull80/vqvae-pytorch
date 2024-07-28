@@ -41,6 +41,7 @@ def get_parser():
     parser.add_argument("-n", "--num-worker", dest="num_workers", type=int)
     parser.add_argument("-e", "--epochs", dest="epochs", type=int)
     parser.add_argument("-w", "--wandb-key", dest="wandb_key", type=str)
+    parser.add_argument("--debug", dest="debug", default=False)
 
     args = parser.parse_args()
     return args
@@ -65,8 +66,8 @@ def per_epoch(
 
     mode = "Train" if train else "Eval"
     for idx, batch in iters:
-        img = batch.to(device)
-        pred, kl_loss = model(img)
+        img, label = batch[0].to(device), batch[1].to(device)
+        pred, kl_loss = model(img, label)
         if train:
             _loss: torch.Tensor = loss_fn(pred, img)
             if kl_loss:
@@ -99,7 +100,7 @@ def per_epoch(
     return loss.avg
 
 
-def execute(cfg: Dict, device: str):
+def execute(cfg: Dict, device: str, debug=False):
     # load model
 
     if ModelEnum.AUTO_ENCODER.value == cfg["model"]["name"]:
@@ -113,7 +114,7 @@ def execute(cfg: Dict, device: str):
     model = model.to(device)
 
     # load dataloader
-    train_dl, val_dl = get_dataloader(cfg)
+    train_dl, val_dl = get_dataloader(cfg, testing_enable = debug)
 
     # define loss_fn and optimizer
     optim_clz: torch.optim.Optimizer = getattr(torch.optim, cfg["train"]["optim"])
@@ -187,7 +188,7 @@ if __name__ == "__main__":
             config=cfg,
         )
 
-    execute(cfg, args.device)
+    execute(cfg, args.device, debug=args.debug)
 
     if WANDB_ENABLE:
         wandb.finish()

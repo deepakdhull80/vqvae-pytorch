@@ -2,8 +2,8 @@ img_shape: 64
 random_seed: 7
 generate_samples: true
 data:
-  clz: "COCODataset"
-  num_classes: 1024
+  clz: "COCOConditionalDataset"
+  num_classes: 90
   batch_size: 128
   num_workers: 10
   data_prefix_path: "REPLACE_WITH_DATA_PATH"

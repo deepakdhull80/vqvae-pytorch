@@ -1,5 +1,5 @@
 import math
-from typing import Dict
+from typing import Dict, Optional, Tuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -156,7 +156,7 @@ class VariationDecoder(nn.Module):
                 encoder_flatten_size if i == 0 else cfg["model"]["encoder"]["fc"][i - 1]
             )
             _in = (
-                cfg["model"]["encoder"]["fc"][i] * 2
+                cfg["model"]["encoder"]["fc"][i] + cfg['data']['num_classes']
                 if len(cfg["model"]["encoder"]["fc"]) == i + 1
                 else 1
             )
@@ -231,10 +231,10 @@ class AutoEncoder(nn.Module):
         self.encoder = Encoder(cfg)
         self.decoder = Decoder(cfg, self.encoder.flatten_size)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, y: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor]:
         z = self.encoder(x)
         x = self.decoder(z)
-        return x, None
+        return x, torch.randn(1)
 
 
 class VariationalAutoEncoder(nn.Module):
@@ -261,11 +261,12 @@ class VariationalAutoEncoder(nn.Module):
         kl_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=1))
         return z, kl_loss
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, y: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor]:
         device = x.device
         z = self.encoder(x)
         z, kl_loss = self.reparameterization(z)
-        y = torch.rand_like(z).to(device)
+        if y is None:
+            y = torch.rand_like(z).to(device)
         z = torch.concat([z, y], dim=1)
         x = self.decoder(z)
         return x, kl_loss
