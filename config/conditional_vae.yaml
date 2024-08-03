@@ -10,7 +10,7 @@ data:
   augmentation_probability: 0.2
   train_size: 0.8
   filter:
-    min_areas: 1000
+    min_area: 1000
     min_height: 3
     min_width: 3
 
