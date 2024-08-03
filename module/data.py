@@ -99,6 +99,7 @@ class COCOConditionalDataset(Dataset):
         self.annotations = self.filter_annotations(self.json_data['annotations'])
         self.transform = Transformer(cfg, flag=disable_tansforms)
         self.num_classes = self.cfg['data']['num_classes']
+        self.normalization_type = cfg['data']['normalization_type']
 
     def filter_annotations(self, annotations: List):
         new_annotations = []
@@ -113,8 +114,13 @@ class COCOConditionalDataset(Dataset):
                 new_annotations.append(a)
         return new_annotations
     
-    def normalize_img(self, img: torch.Tensor) -> torch.Tensor:
-        return (img / 255.0 - 0.5) / 0.5
+    def normalize_img(self, img: torch.Tensor, normalization_type: str = 'tanh') -> torch.Tensor:
+        if normalization_type == 'tanh':
+            return (img / 255.0 - 0.5) / 0.5
+        elif normalization_type == 'sigmoid':
+            return img / 255.0
+        else:
+            raise ValueError(f"Normalization type {normalization_type} not supported")
 
     def correct_img_channels(self, image: torch.Tensor) -> torch.Tensor:
         if len(image.shape) == 2:
@@ -134,7 +140,7 @@ class COCOConditionalDataset(Dataset):
         img = self.correct_img_channels(img)
         img = self.transform(img)
         img = img.float()
-        img = self.normalize_img(img)
+        img = self.normalize_img(img, normalization_type=self.normalization_type)
         y = torch.nn.functional.one_hot(torch.tensor(annotation['category_id']-1), num_classes=self.num_classes)
         return img, y
 

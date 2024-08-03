@@ -3,6 +3,7 @@ random_seed: 7
 generate_samples: true
 data:
   clz: "COCOConditionalDataset"
+  normalization_type: "sigmoid"
   num_classes: 90
   batch_size: 128
   num_workers: 10
@@ -44,4 +45,4 @@ model:
     kernels: [ 3, 1, 3, 1, 3, 7, 4 ]
     strides: [ 1, 2, 1, 2, 1, 1, 1 ]
     norm: [ true, false, true, false, true, true, true]
-    activation: [ 'relu', 'relu', 'relu', 'relu', 'relu', 'relu', 'tanh' ]
+    activation: [ 'relu', 'relu', 'relu', 'relu', 'relu', 'relu', 'sigmoid' ]

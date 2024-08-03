@@ -7,6 +7,8 @@ def get_activation(name: str) -> torch.nn.Module:
         return torch.nn.ReLU()
     elif name == "tanh":
         return torch.nn.Tanh()
+    elif name == "sigmoid":
+        return torch.nn.Sigmoid()
     else:
         raise ValueError("Unknown activation function {}".format(name))
 
