@@ -104,7 +104,11 @@ class COCOConditionalDataset(Dataset):
         new_annotations = []
         for a in annotations:
             bbox = list(map(int, a['bbox']))
-            if bbox[2] > 1 and bbox[3] > 1:
+            if (
+                a['area'] >= self.cfg['data']['filter']['min_area'] 
+                and bbox[2] >= self.cfg['data']['filter']['min_width'] 
+                and bbox[3] >=  self.cfg['data']['filter']['min_height']
+            ):
                 # width and height should be greater than 1
                 new_annotations.append(a)
         return new_annotations

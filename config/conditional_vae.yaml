@@ -9,6 +9,10 @@ data:
   data_prefix_path: "REPLACE_WITH_DATA_PATH"
   augmentation_probability: 0.2
   train_size: 0.8
+  filter:
+    min_areas: 1000
+    min_height: 3
+    min_width: 3
 
 train:
   optim: 'AdamW'
