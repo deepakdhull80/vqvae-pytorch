@@ -42,6 +42,7 @@ def get_parser():
     parser.add_argument("-e", "--epochs", dest="epochs", type=int)
     parser.add_argument("-w", "--wandb-key", dest="wandb_key", type=str)
     parser.add_argument("--debug", dest="debug", default=False, type=bool)
+    parser.add_argument("-l", "--loss-fn", dest="loss_fn")
 
     args = parser.parse_args()
     return args
@@ -177,6 +178,8 @@ if __name__ == "__main__":
     )
     cfg["data"]["epochs"] = args.epochs if args.epochs else cfg["train"]["epochs"]
 
+    cfg['train']['loss_fn'] = args.loss_fn if args.loss_fn else cfg["train"]["loss_fn"]
+    
     if args.wandb_key:
         wandb.login(key=args.wandb_key)
         WANDB_ENABLE = True
