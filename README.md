@@ -1,6 +1,7 @@
 # Vector Quantized Variational Autoencoder
 
-## About: Variational Autoencoder
+## About: 
+### Variational Autoencoder
 
 A Variational Autoencoder (VAE) is a type of generative model that combines neural networks and probabilistic modeling to learn a latent representation of input data and generate new, similar data. Autoencoder whose training is regularised to avoid overfitting and ensure that the latent space has good properties that enable generative process.
 
@@ -23,6 +24,18 @@ It generates data that resembles the input distribution from the latent variable
 The VAE uses a loss function that combines two terms:
 1. Reconstruction Loss: Measures how well the output of the decoder matches the input data. This can be done using Mean Squared Error (MSE) or Binary Cross-Entropy (BCE).
 2. KL Divergence: Ensures that the learned latent space distribution is close to a prior distribution (typically a standard normal distribution). It acts as a regularizer to prevent overfitting and ensures a well-structured latent space.
+
+### Vector Quantized VAE
+
+#### Why different from VAE:
+    1. Encoder network outputs discrete, rather than continuous, codes.
+    2. The prior is learnt rather than static.
+
+#### Posterior Collapse:
+Posterior collapse is a phenomenon in VAEs where the encoder output (the posterior distribution) becomes almost identical to the prior distribution, regardless of the input.
+This typically happens when the decoder is too powerful, learning to reconstruct the input without relying on the latent code.
+As a result, the latent variables z carry little to no useful information, rendering the latent space ineffective.
+
 
 ## Commands:
 

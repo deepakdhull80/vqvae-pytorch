@@ -19,6 +19,7 @@ train:
   kl_loss_weight: 0.2
 
 model:
+  enable_kl_loss: false
   name: "variational-auto-encoder"
   export_path: "/tmp/model.pt"
   latent_dim: 1024

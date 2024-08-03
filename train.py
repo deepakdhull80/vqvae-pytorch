@@ -70,7 +70,7 @@ def per_epoch(
         pred, kl_loss = model(img, label)
         if train:
             _loss: torch.Tensor = loss_fn(pred, img)
-            if kl_loss:
+            if cfg['model']['enable_kl_loss'] and kl_loss:
                 _loss = (1 - cfg['train']['kl_loss_weight']) * _loss + cfg['train']['kl_loss_weight'] * kl_loss
             optimizer.zero_grad()
             _loss.backward()
