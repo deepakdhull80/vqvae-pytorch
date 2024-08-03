@@ -41,7 +41,7 @@ def get_parser():
     parser.add_argument("-n", "--num-worker", dest="num_workers", type=int)
     parser.add_argument("-e", "--epochs", dest="epochs", type=int)
     parser.add_argument("-w", "--wandb-key", dest="wandb_key", type=str)
-    parser.add_argument("--debug", dest="debug", default=False)
+    parser.add_argument("--debug", dest="debug", default=False, type=bool)
 
     args = parser.parse_args()
     return args
@@ -76,9 +76,10 @@ def per_epoch(
             _loss.backward()
             optimizer.step()
         else:
+            # eval
             with torch.no_grad():
                 _loss: torch.Tensor = loss_fn(pred, img)
-                if kl_loss:
+                if cfg['model']['enable_kl_loss'] and kl_loss:
                     _loss = (1 - cfg['train']['kl_loss_weight']) * _loss + cfg['train']['kl_loss_weight'] * kl_loss
 
         with torch.no_grad():
