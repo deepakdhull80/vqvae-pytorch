@@ -23,10 +23,10 @@ train:
     eta_min: 0.000001
   # loss_fn: [smoothL1, mae, mse, bce]
   loss_fn: 'mse'
-  kl_loss_weight: 0.2
+  enable_kl_loss: true
+  kl_loss_weight: 1
 
 model:
-  enable_kl_loss: false
   name: "variational-auto-encoder"
   export_path: "/tmp/model.pt"
   latent_dim: 1024
