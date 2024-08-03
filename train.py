@@ -126,7 +126,7 @@ def execute(cfg: Dict, device: str, debug=False):
         eta_min=cfg["train"]["scheduler"]["eta_min"],
     )
 
-    loss_fn = ReconstructionLoss()
+    loss_fn = ReconstructionLoss(cfg)
     GLOBAL_VAL_LOSS = 1e4
     train_loss, val_loss = 0, 0
     # execute pipeline
