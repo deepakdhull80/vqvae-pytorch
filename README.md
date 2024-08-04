@@ -98,3 +98,4 @@ python train.py \
 
 ### References
 1. Understanding Variational Autoencoders [Link](https://towardsdatascience.com/understanding-variational-autoencoders-vaes-f70510919f73)
+2. Variational Autoencoder Demystified With PyTorch Implementation [Link](https://towardsdatascience.com/variational-autoencoder-demystified-with-pytorch-implementation-3a06bee395ed)

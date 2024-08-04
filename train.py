@@ -75,7 +75,7 @@ def per_epoch(
                 if cfg['train']['loss_fn'] == 'gaussian_likelihood':
                     _loss = (kl_loss - _loss).mean()
                 else:
-                    _loss = _loss + cfg['train']['kl_loss_weight'] * kl_loss
+                    _loss = _loss + cfg['train']['kl_loss_weight'] * kl_loss.mean()
             optimizer.zero_grad()
             _loss.backward()
             optimizer.step()
@@ -87,7 +87,7 @@ def per_epoch(
                     if cfg['train']['loss_fn'] == 'gaussian_likelihood':
                         _loss = (kl_loss - _loss).mean()
                     else:
-                        _loss = _loss + cfg['train']['kl_loss_weight'] * kl_loss
+                        _loss = _loss + cfg['train']['kl_loss_weight'] * kl_loss.mean()
 
         with torch.no_grad():
             # compute metrics
