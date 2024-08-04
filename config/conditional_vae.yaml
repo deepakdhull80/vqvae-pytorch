@@ -16,11 +16,11 @@ data:
     min_width: 3
 
 train:
-  optim: 'AdamW'
-  lr: 0.001
+  optim: 'Adam'
+  lr: 0.005
   epochs: 50
   scheduler:
-    eta_min: 0.000001
+    eta_min: 0.00001
   # loss_fn: [smoothL1, mae, mse, bce, gaussian_likelihood]
   loss_fn: 'gaussian_likelihood'
   enable_kl_loss: true
