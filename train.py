@@ -71,7 +71,7 @@ def per_epoch(
         pred, kl_loss = model(img, label)
         if train:
             _loss: torch.Tensor = loss_fn(pred, img)
-            if cfg['train']['enable_kl_loss'] and kl_loss:
+            if cfg['train']['enable_kl_loss']:
                 _loss = _loss + cfg['train']['kl_loss_weight'] * kl_loss
             optimizer.zero_grad()
             _loss.backward()
@@ -80,7 +80,7 @@ def per_epoch(
             # eval
             with torch.no_grad():
                 _loss: torch.Tensor = loss_fn(pred, img)
-                if cfg['train']['enable_kl_loss'] and kl_loss:
+                if cfg['train']['enable_kl_loss']:
                     _loss = _loss + cfg['train']['kl_loss_weight'] * kl_loss
 
         with torch.no_grad():
