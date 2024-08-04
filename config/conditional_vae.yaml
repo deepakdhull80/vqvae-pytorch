@@ -21,8 +21,8 @@ train:
   epochs: 50
   scheduler:
     eta_min: 0.000001
-  # loss_fn: [smoothL1, mae, mse, bce]
-  loss_fn: 'mse'
+  # loss_fn: [smoothL1, mae, mse, bce, gaussian_likelihood]
+  loss_fn: 'gaussian_likelihood'
   enable_kl_loss: true
   kl_loss_weight: 1
 

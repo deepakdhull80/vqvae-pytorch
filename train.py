@@ -72,7 +72,10 @@ def per_epoch(
         if train:
             _loss: torch.Tensor = loss_fn(pred, img)
             if cfg['train']['enable_kl_loss']:
-                _loss = _loss + cfg['train']['kl_loss_weight'] * kl_loss
+                if cfg['train']['loss_fn'] == 'gaussian_likelihood':
+                    _loss = (kl_loss - _loss).mean()
+                else:
+                    _loss = _loss + cfg['train']['kl_loss_weight'] * kl_loss
             optimizer.zero_grad()
             _loss.backward()
             optimizer.step()
@@ -81,7 +84,10 @@ def per_epoch(
             with torch.no_grad():
                 _loss: torch.Tensor = loss_fn(pred, img)
                 if cfg['train']['enable_kl_loss']:
-                    _loss = _loss + cfg['train']['kl_loss_weight'] * kl_loss
+                    if cfg['train']['loss_fn'] == 'gaussian_likelihood':
+                        _loss = (kl_loss - _loss).mean()
+                    else:
+                        _loss = _loss + cfg['train']['kl_loss_weight'] * kl_loss
 
         with torch.no_grad():
             # compute metrics
