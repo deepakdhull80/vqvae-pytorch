@@ -254,13 +254,33 @@ class VariationalAutoEncoder(nn.Module):
         device = z.device
         mu = self.mu_fc(z)
         log_var = self.log_var_fc(z)
-        epsilon = torch.rand_like(z).to(device)
+        # epsilon = torch.rand_like(z).to(device)
         sigma = torch.exp(0.5 * log_var)
-        z = mu + sigma * epsilon
+        # z = mu + sigma * epsilon
+        q = torch.distributions.Normal(loc=mu, scale=sigma)
+        z = q.rsample()
         
-        kl_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=1))
+        # kl_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=1))
+        kl_loss = self.kl_divergence(z, mu, sigma)
         return z, kl_loss
 
+    def kl_divergence(self, z, mu, std):
+        # --------------------------
+        # Monte carlo KL divergence
+        # --------------------------
+        # 1. define the first two probabilities (in this case Normal for both)
+        p = torch.distributions.Normal(torch.zeros_like(mu), torch.ones_like(std))
+        q = torch.distributions.Normal(mu, std)
+
+        # 2. get the probabilities from the equation
+        log_qzx = q.log_prob(z)
+        log_pz = p.log_prob(z)
+
+        # kl
+        kl = (log_qzx - log_pz)
+        kl = kl.sum(-1)
+        return kl
+    
     def forward(self, x: torch.Tensor, y: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor]:
         device = x.device
         z = self.encoder(x)
