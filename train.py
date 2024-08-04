@@ -191,7 +191,7 @@ if __name__ == "__main__":
             # track hyperparameters and run metadata
             config=cfg,
         )
-
+    print("config:", cfg)
     execute(cfg, args.device, debug=args.debug)
 
     if WANDB_ENABLE:
