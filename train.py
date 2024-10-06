@@ -102,7 +102,8 @@ def per_epoch(
                     f"[{mode}] step: {idx}, loss: {_loss: .3f}, avgLoss: {loss.avg}"
                 )
                 if WANDB_ENABLE:
-                    wandb.log({f"{mode}-step-loss": loss.avg})
+                    wandb.log({f"{mode}-step-loss-avg": loss.avg})
+                    wandb.log({f"{mode}-step-loss": _loss})
     if WANDB_ENABLE:
         wandb.log({f"{mode}-loss": loss.avg})
     return loss.avg
