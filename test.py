@@ -68,6 +68,16 @@ class AutoEncoderTest(TestCaseWrapper):
         )
 
 
+class VQVAETest(TestCaseWrapper):
+    from module.vqvae.vqvae import VQVAE
+    cfg = yaml.safe_load(open("config/vqvae.yaml", "r"))
+    model = VQVAE(cfg)
+    IMG_SIZE = 256
+    def test_vqvae_output(self):
+        img = torch.randint(0, 256, size=( 1, 3, self.IMG_SIZE, self.IMG_SIZE))
+        x, (codebook_loss, reconstruction_loss) = self.model(img)
+        print(x.shape, codebook_loss, reconstruction_loss)
+
 def main():
     unittest.main()
 

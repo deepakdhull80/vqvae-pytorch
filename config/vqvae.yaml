@@ -1,0 +1,69 @@
+img_shape: 64
+random_seed: 7
+generate_samples: true
+data:
+  clz: "COCODataset"
+  num_classes: 1024
+  batch_size: 128
+  num_workers: 10
+  data_prefix_path: "REPLACE_WITH_DATA_PATH"
+  augmentation_probability: 0.2
+  train_size: 0.8
+
+train:
+  optim: 'AdamW'
+  lr: 0.001
+  epochs: 50
+  scheduler:
+    eta_min: 0.000001
+  kl_loss_weight: 0.2
+
+model:
+  name: "vq-vae"
+  export_path: "/tmp/model.pt"
+  encoder:
+    layers:
+      - name: 'conv2d'
+        in_channels: 3
+        out_channels: 64
+        kernel_size: 7
+        stride: 1
+      
+      - name: 'conv2d'
+        in_channels: 64
+        out_channels: 64
+        kernel_size: 3
+        stride: 1
+        padding: 1
+      
+      - name: 'resnet'
+        repeat: 2
+        dim: 64
+      
+      - name: 'conv2d'
+        in_channels: 64
+        out_channels: 128
+        kernel_size: 3
+        stride: 2
+        padding: 1
+
+      - name: 'resnet'
+        repeat: 2
+        dim: 128
+      
+      - name: 'conv2d'
+        in_channels: 128
+        out_channels: 256
+        kernel_size: 3
+        stride: 2
+        padding: 1
+      
+      - name: 'resnet'
+        repeat: 2
+        dim: 256
+  
+  codebook:
+    k: 1024
+
+  decoder:
+    
