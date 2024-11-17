@@ -75,6 +75,7 @@ class VQVAETest(TestCaseWrapper):
     IMG_SIZE = 256
     def test_vqvae_output(self):
         img = torch.randint(0, 256, size=( 1, 3, self.IMG_SIZE, self.IMG_SIZE))
+        img= img / 255.0
         x, (codebook_loss, reconstruction_loss) = self.model(img)
         print(x.shape, codebook_loss, reconstruction_loss)
 

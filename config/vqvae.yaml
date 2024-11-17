@@ -11,9 +11,10 @@ data:
   train_size: 0.8
 
 train:
-  optim: 'AdamW'
-  lr: 0.001
+  optim: 'Adam'
+  lr: 0.0002
   epochs: 50
+  num_train_steps: 250000
   scheduler:
     eta_min: 0.000001
   kl_loss_weight: 0.2
@@ -21,49 +22,54 @@ train:
 model:
   name: "vq-vae"
   export_path: "/tmp/model.pt"
+  # Conv formula x = [(i - w + 2*p)/s] + 1
+  # Conv transpose formula i = (x-1)*s + w - 2*p
   encoder:
     layers:
+    # 128
       - name: 'conv2d'
-        in_channels: 3
-        out_channels: 64
-        kernel_size: 7
-        stride: 1
-      
+        param:
+          in_channels: 3
+          out_channels: 256
+          kernel_size: 4
+          stride: 2
+          padding: 1
+    # 64
       - name: 'conv2d'
-        in_channels: 64
-        out_channels: 64
-        kernel_size: 3
-        stride: 1
-        padding: 1
-      
-      - name: 'resnet'
-        repeat: 2
-        dim: 64
-      
-      - name: 'conv2d'
-        in_channels: 64
-        out_channels: 128
-        kernel_size: 3
-        stride: 2
-        padding: 1
-
-      - name: 'resnet'
-        repeat: 2
-        dim: 128
-      
-      - name: 'conv2d'
-        in_channels: 128
-        out_channels: 256
-        kernel_size: 3
-        stride: 2
-        padding: 1
-      
+        param:
+          in_channels: 256
+          out_channels: 256
+          kernel_size: 4
+          stride: 2
+          padding: 1
+    # 32
       - name: 'resnet'
         repeat: 2
         dim: 256
-  
+    # 32
   codebook:
     k: 1024
+    dim: 256
 
   decoder:
-    
+    layers:
+      - name: 'resnet'
+        repeat: 2
+        dim: 256
+      # 32
+      - name: 'conv2d_transpose'
+        param:
+          in_channels: 256
+          out_channels: 256
+          kernel_size: 4
+          stride: 2
+          padding: 1
+      # 64
+      - name: 'conv2d_transpose'
+        param:
+          in_channels: 256
+          out_channels: 3
+          kernel_size: 4
+          stride: 2
+          padding: 1
+      # 128

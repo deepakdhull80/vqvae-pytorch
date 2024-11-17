@@ -12,14 +12,14 @@ class ImageEncoder(torch.nn.Module):
         
         for layer_cfg in layer_cfg_li:
             if layer_cfg['name'] == 'conv2d':
-                del layer_cfg['name']
                 layers.append(torch.nn.Conv2d(
-                    **layer_cfg
+                    **layer_cfg['param']
                 ))
-            
-            if layer_cfg['name'] == 'resnet':
+            elif layer_cfg['name'] == 'resnet':
                 for _ in range(layer_cfg['repeat']):
                     layers.append(ResidualBlock(dim=layer_cfg['dim']))
+            else:
+                raise NotImplementedError(f"{layer_cfg['name']} not implemented yet!")
         
         self.layers = torch.nn.ModuleList(layers)
     
