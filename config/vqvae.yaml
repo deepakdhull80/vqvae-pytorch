@@ -4,7 +4,8 @@ generate_samples: true
 data:
   clz: "COCODataset"
   num_classes: 1024
-  batch_size: 128
+  # batch_size: 128
+  batch_size: 8
   num_workers: 10
   data_prefix_path: "REPLACE_WITH_DATA_PATH"
   augmentation_probability: 0.2
@@ -14,10 +15,12 @@ train:
   optim: 'Adam'
   lr: 0.0002
   epochs: 50
-  num_train_steps: 250000
+  # num_train_steps: 250000
+  num_train_steps: 10
   scheduler:
     eta_min: 0.000001
   kl_loss_weight: 0.2
+  loss_fn: null
 
 model:
   name: "vq-vae"
@@ -50,6 +53,7 @@ model:
   codebook:
     k: 1024
     dim: 256
+    commitment_coefficient: 0.25
 
   decoder:
     layers:

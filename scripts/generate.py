@@ -65,13 +65,24 @@ class ModelHelper(metaclass=Singleton):
 
         img = self.model.decoder(z.to(self.device))
         return [self.to_pil(img) for img in self.transform(img).unbind(0)]
-    
+
     @torch.no_grad()
     def generate_conditional_image(self, n_items: int = 4) -> List[Image.Image]:
 
         latent_dim = self.cfg["model"]["encoder"]["fc"][-1]
         z = torch.randn((n_items, latent_dim))
-        z = torch.concat([z, torch.nn.functional.one_hot(torch.randint(low=0, high=self.cfg['data']['num_classes']-1, size=(n_items,)), num_classes=self.cfg['data']['num_classes'])], dim=1)
+        z = torch.concat(
+            [
+                z,
+                torch.nn.functional.one_hot(
+                    torch.randint(
+                        low=0, high=self.cfg["data"]["num_classes"] - 1, size=(n_items,)
+                    ),
+                    num_classes=self.cfg["data"]["num_classes"],
+                ),
+            ],
+            dim=1,
+        )
         img = self.model.decoder(z.to(self.device))
         return [self.to_pil(img) for img in self.transform(img).unbind(0)]
 
@@ -80,8 +91,12 @@ class ModelHelper(metaclass=Singleton):
     ) -> None:
         os.makedirs(output, exist_ok=True)
 
-        imgs = self.generate_conditional_image(n_items=n_items) if self.cfg['data']['clz'] == 'COCOConditionalDataset' else self.generate_image(n_items=n_items)
-        
+        imgs = (
+            self.generate_conditional_image(n_items=n_items)
+            if self.cfg["data"]["clz"] == "COCOConditionalDataset"
+            else self.generate_image(n_items=n_items)
+        )
+
         for img in imgs:
             file_name = str(
                 mmh3.hash_from_buffer(np.random.rand(int(1e5)), signed=False)

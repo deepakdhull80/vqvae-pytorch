@@ -11,6 +11,7 @@ from tqdm import tqdm
 import wandb
 
 from module.vae import AutoEncoder, VariationalAutoEncoder
+from module.vqvae import VQVAE
 from module.data import get_dataloader
 from module.loss import ReconstructionLoss
 from module.constant import ModelEnum
@@ -67,27 +68,34 @@ def per_epoch(
 
     mode = "Train" if train else "Eval"
     for idx, batch in iters:
+        _loss = None
         img, label = batch[0].to(device), batch[1].to(device)
-        pred, kl_loss = model(img, label)
+        pred, m_loss = model(img, label)
+        if type(m_loss) == tuple:
+            codebook_loss, reconstruct_loss = m_loss
+            _loss = reconstruct_loss + codebook_loss
         if train:
-            _loss: torch.Tensor = loss_fn(pred, img)
-            if cfg['train']['enable_kl_loss']:
-                if cfg['train']['loss_fn'] == 'gaussian_likelihood':
-                    _loss = (kl_loss - _loss).mean()
-                else:
-                    _loss = _loss + cfg['train']['kl_loss_weight'] * kl_loss.mean()
+            if _loss is None:
+                _loss: torch.Tensor = loss_fn(pred, img)
+                if cfg["train"]["enable_loss"]:
+                    if cfg["train"]["loss_fn"] == "gaussian_likelihood":
+                        _loss = (loss - _loss).mean()
+                    else:
+                        _loss = _loss + cfg["train"]["loss_weight"] * loss.mean()
+
             optimizer.zero_grad()
             _loss.backward()
             optimizer.step()
         else:
             # eval
-            with torch.no_grad():
-                _loss: torch.Tensor = loss_fn(pred, img)
-                if cfg['train']['enable_kl_loss']:
-                    if cfg['train']['loss_fn'] == 'gaussian_likelihood':
-                        _loss = (kl_loss - _loss).mean()
-                    else:
-                        _loss = _loss + cfg['train']['kl_loss_weight'] * kl_loss.mean()
+            if _loss is None:
+                with torch.no_grad():
+                    _loss: torch.Tensor = loss_fn(pred, img)
+                    if cfg["train"]["enable_loss"]:
+                        if cfg["train"]["loss_fn"] == "gaussian_likelihood":
+                            _loss = (loss - _loss).mean()
+                        else:
+                            _loss = _loss + cfg["train"]["loss_weight"] * loss.mean()
 
         with torch.no_grad():
             # compute metrics
@@ -116,6 +124,8 @@ def execute(cfg: Dict, device: str, debug=False):
         model = AutoEncoder(cfg)
     elif ModelEnum.VARIATIONAL_AUTO_ENCODER.value == cfg["model"]["name"]:
         model = VariationalAutoEncoder(cfg)
+    elif ModelEnum.VQVAE.value == cfg["model"]["name"]:
+        model = VQVAE(cfg)
     else:
         raise ValueError(
             f"Model {cfg['model']['name']} not supported. Available models are {ModelEnum.list()}"
@@ -123,8 +133,10 @@ def execute(cfg: Dict, device: str, debug=False):
     model = model.to(device)
 
     # load dataloader
-    train_dl, val_dl = get_dataloader(cfg, testing_enable = debug)
+    train_dl, val_dl = get_dataloader(cfg, testing_enable=debug)
 
+    if "num_train_steps" in cfg["train"]:
+        cfg["data"]["epochs"] = max(1, cfg["train"]["num_train_steps"] // len(train_dl))
     # define loss_fn and optimizer
     optim_clz: torch.optim.Optimizer = getattr(torch.optim, cfg["train"]["optim"])
     optimizer = optim_clz(model.parameters(), lr=cfg["train"]["lr"])
@@ -134,7 +146,13 @@ def execute(cfg: Dict, device: str, debug=False):
         eta_min=cfg["train"]["scheduler"]["eta_min"],
     )
 
-    loss_fn = ReconstructionLoss(cfg)
+    if cfg["train"]["loss_fn"] is not None:
+        loss_fn = ReconstructionLoss(cfg)
+    else:
+        logging.warning(
+            "loss_fn provided is None!. So loss is dependent upon a loss provided by model."
+        )
+        loss_fn = lambda x: x
     GLOBAL_VAL_LOSS = 1e4
     train_loss, val_loss = 0, 0
     # execute pipeline
@@ -175,7 +193,7 @@ if __name__ == "__main__":
     )
     assert os.path.exists(
         cfg["data"]["data_prefix_path"]
-    ), "Config file not found: {}".format(cfg["data"]["data_prefix_data"])
+    ), "Config file not found: {}".format(cfg["data"]["data_prefix_path"])
 
     cfg["data"]["batch_size"] = (
         args.batch_size if args.batch_size else cfg["data"]["batch_size"]
@@ -185,8 +203,8 @@ if __name__ == "__main__":
     )
     cfg["data"]["epochs"] = args.epochs if args.epochs else cfg["train"]["epochs"]
 
-    cfg['train']['loss_fn'] = args.loss_fn if args.loss_fn else cfg["train"]["loss_fn"]
-    
+    cfg["train"]["loss_fn"] = args.loss_fn if args.loss_fn else cfg["train"]["loss_fn"]
+
     if args.wandb_key:
         wandb.login(key=args.wandb_key)
         WANDB_ENABLE = True
