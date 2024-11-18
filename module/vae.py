@@ -156,7 +156,7 @@ class VariationDecoder(nn.Module):
                 encoder_flatten_size if i == 0 else cfg["model"]["encoder"]["fc"][i - 1]
             )
             _in = (
-                cfg["model"]["encoder"]["fc"][i] + cfg['data']['num_classes']
+                cfg["model"]["encoder"]["fc"][i] + cfg["data"]["num_classes"]
                 if len(cfg["model"]["encoder"]["fc"]) == i + 1
                 else 1
             )
@@ -231,7 +231,9 @@ class AutoEncoder(nn.Module):
         self.encoder = Encoder(cfg)
         self.decoder = Decoder(cfg, self.encoder.flatten_size)
 
-    def forward(self, x: torch.Tensor, y: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(
+        self, x: torch.Tensor, y: Optional[torch.Tensor] = None
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         z = self.encoder(x)
         x = self.decoder(z)
         return x, torch.randn(1)
@@ -259,7 +261,7 @@ class VariationalAutoEncoder(nn.Module):
         # z = mu + sigma * epsilon
         q = torch.distributions.Normal(loc=mu, scale=sigma)
         z = q.rsample()
-        
+
         # kl_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=1))
         kl_loss = self.kl_divergence(z, mu, sigma)
         return z, kl_loss
@@ -277,11 +279,13 @@ class VariationalAutoEncoder(nn.Module):
         log_pz = p.log_prob(z)
 
         # kl
-        kl = (log_qzx - log_pz)
+        kl = log_qzx - log_pz
         kl = kl.sum(-1)
         return kl
-    
-    def forward(self, x: torch.Tensor, y: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor]:
+
+    def forward(
+        self, x: torch.Tensor, y: Optional[torch.Tensor] = None
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         device = x.device
         z = self.encoder(x)
         z, kl_loss = self.reparameterization(z)

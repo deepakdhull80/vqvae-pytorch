@@ -62,7 +62,7 @@ options:
 ```
 
 #### Start single GPU training
-Varitaional AutoEncoder
+Variational AutoEncoder
 ```bash
 python train.py \
     --config vae \
@@ -73,7 +73,7 @@ python train.py \
     --batch-size 256
 ```
 
-Conditional Varitaional AutoEncoder
+Conditional Variational AutoEncoder
 ```bash
 python train.py \
     --config conditional_vae \
@@ -85,11 +85,11 @@ python train.py \
 ```
 
 ## TODO:
-    - [] Vector Quantized Variational AutoEncoder
     - [] Image completion task
     - [] Sketch to Realistic Image Generation
 
 ## Completed:
+    - [x] Vector Quantized Variational AutoEncoder
     - [x] Code Base is ready to test different architectures
     - [x] Tried Auto Encoder: Able to see decent results only in compressed image generation, but it failed to generate any image from random noise.
     - [x] Generator script created.
