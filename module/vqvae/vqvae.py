@@ -11,9 +11,17 @@ class VQVAE(torch.nn.Module):
         self.encoder = ImageEncoder(cfg)
         self.codebook = Codebook(cfg)
         self.decoder = Decoder(cfg)
+        self.act = torch.nn.Tanh()
 
     def reconstruction_loss(self, x, x_p) -> torch.Tensor:
         return torch.nn.functional.mse_loss(x, x_p)
+
+    def generate(self, x):
+        x = self.encoder(x)
+        x, q_x, _ = self.codebook(x)
+        x = self.decoder(x)
+        x = self.act(x)
+        return x, q_x
 
     def forward(self, x: torch.Tensor, label: torch.Tensor = None) -> torch.Tensor:
         """
@@ -27,6 +35,7 @@ class VQVAE(torch.nn.Module):
         """
         z_h = self.encoder(x)
         z_h, discrete_h, codebook_loss = self.codebook(z_h)
-        x_h = self.decoder(z_h)
+        x_h = self.act(self.decoder(z_h))
+
         reco_loss = self.reconstruction_loss(x, x_h)
         return x_h, (codebook_loss, reco_loss)

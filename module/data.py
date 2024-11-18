@@ -53,11 +53,17 @@ class Transformer(object):
 
 class COCODataset(Dataset):
     def __init__(
-        self, cfg: Dict, image_list: List, disable_tansforms: bool = False
+        self,
+        cfg: Dict,
+        data_prefix_path: str,
+        image_list: List,
+        disable_tansforms: bool = False,
+        *args,
+        **kwargs,
     ) -> None:
         super().__init__()
         self.cfg = cfg
-        self.data_prefix_path = cfg["data"]["data_prefix_path"]
+        self.data_prefix_path = data_prefix_path
         self.image_list = image_list
         self.transform = Transformer(cfg, flag=disable_tansforms)
 
@@ -88,7 +94,12 @@ class COCODataset(Dataset):
 
 class COCOConditionalDataset(Dataset):
     def __init__(
-        self, cfg: Dict, disable_tansforms: bool = False, train: bool = True
+        self,
+        cfg: Dict,
+        disable_tansforms: bool = False,
+        train: bool = True,
+        *args,
+        **kwargs,
     ) -> None:
         super().__init__()
         self.cfg = cfg
@@ -177,8 +188,16 @@ def get_dataloader(
     val_image_li = imgs[train_size:]
 
     if cfg["data"]["clz"] == "COCODataset":
-        train_kwargs = {"cfg": cfg, "image_list": train_image_li}
-        val_kwargs = {"cfg": cfg, "image_list": val_image_li}
+        train_kwargs = {
+            "cfg": cfg,
+            "data_prefix_path": cfg["data"]["data_prefix_path"],
+            "image_list": train_image_li,
+        }
+        val_kwargs = {
+            "cfg": cfg,
+            "data_prefix_path": cfg["data"]["data_prefix_path"],
+            "image_list": val_image_li,
+        }
 
     elif cfg["data"]["clz"] == "COCOConditionalDataset":
         train_kwargs = {

@@ -54,6 +54,7 @@ def per_epoch(
     model: nn.Module,
     dl: torch.utils.data.DataLoader,
     optimizer: torch.optim.Optimizer,
+    scheduler: torch.optim.lr_scheduler._LRScheduler,
     loss_fn: nn.Module,
     device: str,
     train: bool = True,
@@ -86,6 +87,7 @@ def per_epoch(
             optimizer.zero_grad()
             _loss.backward()
             optimizer.step()
+            scheduler.step()
         else:
             # eval
             if _loss is None:
@@ -159,10 +161,13 @@ def execute(cfg: Dict, device: str, debug=False):
     for epoch in range(cfg["train"]["epochs"]):
         custom_print(f"Epoch: {epoch+1}")
         custom_print("Start Training Step")
-        train_loss = per_epoch(cfg, model, train_dl, optimizer, loss_fn, device, True)
+        train_loss = per_epoch(
+            cfg, model, train_dl, optimizer, scheduler, loss_fn, device, True
+        )
         logging.info("Start Validating Step")
-        val_loss = per_epoch(cfg, model, val_dl, optimizer, loss_fn, device, False)
-        scheduler.step()
+        val_loss = per_epoch(
+            cfg, model, val_dl, optimizer, scheduler, loss_fn, device, False
+        )
 
         # TODO: Save checkpoint
         if GLOBAL_VAL_LOSS > val_loss:
@@ -173,7 +178,21 @@ def execute(cfg: Dict, device: str, debug=False):
                     cfg=cfg, model_chkpt_path=cfg["model"]["export_path"], device="cpu"
                 )
                 model_helper.refresh_weights(model)
-                model_helper.generate_and_save(n_items=4, file_prefix=epoch)
+                imgs = model_helper.generate_and_save(n_items=4, file_prefix=epoch)
+                if imgs is not None and WANDB_ENABLE:
+                    wandb.log(
+                        {
+                            "gen_images": [
+                                wandb.Image(
+                                    img,
+                                    mode="RGB",
+                                    caption=f"random field {i}",
+                                    file_type="jpg",
+                                )
+                                for i, img in enumerate(imgs)
+                            ]
+                        }
+                    )
 
         logging.info(
             f"Epoch Summary: [{epoch+1}] train_loss: {train_loss: .5f}, val_loss: {val_loss: .5f}, lr: {scheduler.get_last_lr()}, GLOBAL_VAL_LOSS: {GLOBAL_VAL_LOSS: .5f}"
