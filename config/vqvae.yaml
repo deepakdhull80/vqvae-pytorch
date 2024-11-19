@@ -1,4 +1,4 @@
-img_shape: 64
+img_shape: 128
 random_seed: 7
 generate_samples: true
 data:
@@ -7,9 +7,11 @@ data:
   batch_size: 128
   # batch_size: 8
   num_workers: 10
-  data_prefix_path: "REPLACE_WITH_DATA_PATH"
-  val_data_prefix_path: "REPLACE_WITH_DATA_PATH"
-  augmentation_probability: 0.2
+  # data_prefix_path: "REPLACE_WITH_DATA_PATH"
+  # val_data_prefix_path: "REPLACE_WITH_DATA_PATH"
+  data_prefix_path: "/Users/deepak.dhull/practice/data/val2017"
+  val_data_prefix_path: "/Users/deepak.dhull/practice/data/val2017"
+  augmentation_probability: 0.0
   train_size: 0.8
 
 train:
@@ -34,45 +36,45 @@ model:
       - name: 'conv2d'
         param:
           in_channels: 3
-          out_channels: 256
+          out_channels: 64
           kernel_size: 4
           stride: 2
           padding: 1
     # 64
       - name: 'conv2d'
         param:
-          in_channels: 256
-          out_channels: 256
+          in_channels: 64
+          out_channels: 64
           kernel_size: 4
           stride: 2
           padding: 1
     # 32
       - name: 'resnet'
         repeat: 2
-        dim: 256
+        dim: 64
     # 32
   codebook:
-    k: 1024
-    dim: 256
-    commitment_coefficient: 0.25
+    k: 512
+    dim: 64
+    commitment_coefficient: 1
 
   decoder:
     layers:
       - name: 'resnet'
         repeat: 2
-        dim: 256
+        dim: 64
       # 32
       - name: 'conv2d_transpose'
         param:
-          in_channels: 256
-          out_channels: 256
+          in_channels: 64
+          out_channels: 64
           kernel_size: 4
           stride: 2
           padding: 1
       # 64
       - name: 'conv2d_transpose'
         param:
-          in_channels: 256
+          in_channels: 64
           out_channels: 3
           kernel_size: 4
           stride: 2
