@@ -85,6 +85,8 @@ python train.py \
 ```
 
 ## TODO:
+    - [] Generated image push to wandb along with ground truth.
+    - [] Add perceptual loss
     - [] Image completion task
     - [] Sketch to Realistic Image Generation
 
