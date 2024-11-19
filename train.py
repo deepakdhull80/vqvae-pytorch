@@ -141,7 +141,7 @@ def execute(cfg: Dict, device: str, debug=False):
         cfg["data"]["epochs"] = max(1, cfg["train"]["num_train_steps"] // len(train_dl))
     # define loss_fn and optimizer
     optim_clz: torch.optim.Optimizer = getattr(torch.optim, cfg["train"]["optim"])
-    optimizer = optim_clz(model.parameters(), lr=cfg["train"]["lr"])
+    optimizer = optim_clz(model.parameters(), **cfg["train"]["optim_params"])
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer,
         T_max=len(train_dl) * cfg["train"]["epochs"],

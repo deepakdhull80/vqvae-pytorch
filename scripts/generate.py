@@ -57,7 +57,7 @@ class ModelHelper(metaclass=Singleton):
         self.to_pil = ToPILImage()
 
     def refresh_weights(self, model: torch.nn.Module):
-        self.model.load_state_dict(model.state_dict())
+        print(self.model.load_state_dict(model.state_dict()))
         self.model.to(self.device)
 
     @torch.no_grad()
@@ -108,6 +108,7 @@ class ModelHelper(metaclass=Singleton):
         reco_imgs = []
         for img, _ in val_img_iter:
             r, _ = self.model.generate(img.to(self.device).unsqueeze(0))
+            r = r * 0.5 + 0.5
             r = r.squeeze(0).cpu()
             r = self.to_pil(r)
             reco_imgs.append(r)

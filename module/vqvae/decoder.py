@@ -11,7 +11,7 @@ class Decoder(torch.nn.Module):
         layer_cfg_li = deepcopy(cfg["model"]["decoder"]["layers"])
         layers = []
 
-        for layer_cfg in layer_cfg_li:
+        for i, layer_cfg in enumerate(layer_cfg_li):
             if layer_cfg["name"] == "conv2d_transpose":
                 layers.append(torch.nn.ConvTranspose2d(**layer_cfg["param"]))
             elif layer_cfg["name"] == "resnet":
@@ -19,6 +19,8 @@ class Decoder(torch.nn.Module):
                     layers.append(ResidualBlock(dim=layer_cfg["dim"]))
             else:
                 raise NotImplementedError(f"{layer_cfg['name']} not implemented yet!")
+            if len(layer_cfg_li) - 1 != i:
+                layers.append(torch.nn.ReLU())
 
         self.layers = torch.nn.ModuleList(layers)
 

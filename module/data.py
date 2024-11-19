@@ -14,6 +14,7 @@ from torchvision.transforms import (
     RandomVerticalFlip,
     Resize,
     RandomAutocontrast,
+    Normalize,
 )
 import torchvision.transforms.functional as VF
 
@@ -36,15 +37,19 @@ class Transformer(object):
             self.augments = Compose(
                 [
                     Resize(size=(cfg["img_shape"], cfg["img_shape"]), antialias=True),
+                    # Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
                     RandomHorizontalFlip(p=cfg["data"]["augmentation_probability"]),
-                    RandomVerticalFlip(p=cfg["data"]["augmentation_probability"]),
-                    RandomAdjustSharpness(2, p=cfg["data"]["augmentation_probability"]),
-                    RandomAutocontrast(p=cfg["data"]["augmentation_probability"]),
+                    # RandomVerticalFlip(p=cfg["data"]["augmentation_probability"]),
+                    # RandomAdjustSharpness(2, p=cfg["data"]["augmentation_probability"]),
+                    # RandomAutocontrast(p=cfg["data"]["augmentation_probability"]),
                 ]
             )
         else:
             self.augments = Compose(
-                [Resize(size=(cfg["img_shape"], cfg["img_shape"]), antialias=True)]
+                [
+                    Resize(size=(cfg["img_shape"], cfg["img_shape"]), antialias=True),
+                    # Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+                ]
             )
 
     def __call__(self, x: torch.Tensor):
@@ -67,8 +72,10 @@ class COCODataset(Dataset):
         self.image_list = image_list
         self.transform = Transformer(cfg, flag=disable_tansforms)
 
-    def normalize_img(self, img: torch.Tensor) -> torch.Tensor:
+    def scale_img(self, img: torch.Tensor) -> torch.Tensor:
         return (img / 255.0 - 0.5) / 0.5
+        # return img / 255.0
+        # (x * 0.5 + 0.5) * 255
 
     def correct_img_channels(self, image: torch.Tensor) -> torch.Tensor:
         if len(image.shape) == 2:
@@ -85,7 +92,7 @@ class COCODataset(Dataset):
         img = self.correct_img_channels(img)
         img = self.transform(img)
         img = img.float()
-        img = self.normalize_img(img)
+        img = self.scale_img(img)
         return img, torch.tensor(1)
 
     def __len__(self):
