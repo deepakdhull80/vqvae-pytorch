@@ -26,6 +26,9 @@ class VQVAE(torch.nn.Module):
         x = self.act(x)
         return x, q_x
 
+    def _reverse_scale(self, x: torch.Tensor) -> torch.Tensor:
+        return x * 0.5 + 0.5
+
     def forward(self, x: torch.Tensor, label: torch.Tensor = None) -> torch.Tensor:
         """
         Input:
@@ -45,7 +48,10 @@ class VQVAE(torch.nn.Module):
 
         if self.cfg["model"]["enable_perceptual"]:
             perp_loss = self.perp_loss_fn(
-                x_h, x, feature_layers=[0, 1, 2, 3], style_layers=[]
+                self._reverse_scale(x_h),
+                self._reverse_scale(x),
+                feature_layers=[0, 1, 2, 3],
+                style_layers=[],
             )
         reco_loss += perp_loss
         return x_h, (codebook_loss, reco_loss)

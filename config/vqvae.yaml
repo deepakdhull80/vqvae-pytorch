@@ -31,7 +31,7 @@ train:
 
 model:
   name: "vq-vae"
-  enable_perceptual: true
+  enable_perceptual: false
   export_path: "/tmp/model.pt"
   # Conv formula x = [(i - w + 2*p)/s] + 1
   # Conv transpose formula i = (x-1)*s + w - 2*p
