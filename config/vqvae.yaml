@@ -53,6 +53,14 @@ model:
           kernel_size: 4
           stride: 2
           padding: 1
+      
+      # - name: 'conv2d'
+      #   param:
+      #     in_channels: 128
+      #     out_channels: 128
+      #     kernel_size: 4
+      #     stride: 2
+      #     padding: 1
     # 32
       - name: 'resnet'
         repeat: 2
@@ -61,7 +69,7 @@ model:
   codebook:
     k: 512
     dim: 128
-    commitment_coefficient: 0.25
+    commitment_coefficient: 0.5
 
   decoder:
     layers:
@@ -76,6 +84,14 @@ model:
           kernel_size: 4
           stride: 2
           padding: 1
+
+      # - name: 'conv2d_transpose'
+      #   param:
+      #     in_channels: 128
+      #     out_channels: 128
+      #     kernel_size: 4
+      #     stride: 2
+      #     padding: 1
       # 64
       - name: 'conv2d_transpose'
         param:

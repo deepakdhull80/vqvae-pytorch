@@ -70,10 +70,12 @@ def per_epoch(
     mode = "Train" if train else "Eval"
     for idx, batch in iters:
         _loss = None
+        codebook_usage = None
         img, label = batch[0].to(device), batch[1].to(device)
         pred, m_loss = model(img, label)
         if type(m_loss) == tuple:
-            codebook_loss, reconstruct_loss = m_loss
+            # VQVAE
+            codebook_loss, reconstruct_loss, codebook_usage = m_loss
             _loss = reconstruct_loss + codebook_loss
         if train:
             if _loss is None:
@@ -105,15 +107,19 @@ def per_epoch(
             loss.update(_loss)
 
         if not WANDB_ENABLE:
-            iters.set_description(f"[{mode}] loss: {_loss: .3f} avgLoss: {loss.avg}")
+            iters.set_description(
+                f"[{mode}] loss: {_loss: .3f} avgLoss: {loss.avg} codebook-entropy: {codebook_usage}"
+            )
         else:
             if idx % 50 == 0:
                 custom_print(
-                    f"[{mode}] step: {idx}, loss: {_loss: .3f}, avgLoss: {loss.avg}"
+                    f"[{mode}] step: {idx}, loss: {_loss: .3f}, avgLoss: {loss.avg} codebook-entropy: {codebook_usage}"
                 )
                 if WANDB_ENABLE:
                     wandb.log({f"{mode}-step-loss-avg": loss.avg})
                     wandb.log({f"{mode}-step-loss": _loss})
+                    if codebook_usage is not None:
+                        wandb.log({f"{mode}-step-codebook-entropy": codebook_usage})
     if WANDB_ENABLE:
         wandb.log({f"{mode}-loss": loss.avg})
     return loss.avg
@@ -138,7 +144,9 @@ def execute(cfg: Dict, device: str, debug=False):
     train_dl, val_dl = get_dataloader(cfg, testing_enable=debug)
 
     if "num_train_steps" in cfg["train"]:
-        cfg["data"]["epochs"] = max(1, cfg["train"]["num_train_steps"] // len(train_dl))
+        cfg["train"]["epochs"] = max(
+            1, cfg["train"]["num_train_steps"] // len(train_dl)
+        )
     # define loss_fn and optimizer
     optim_clz: torch.optim.Optimizer = getattr(torch.optim, cfg["train"]["optim"])
     optimizer = optim_clz(model.parameters(), **cfg["train"]["optim_params"])
@@ -220,7 +228,7 @@ if __name__ == "__main__":
     cfg["data"]["num_workers"] = (
         args.num_workers if args.num_workers else cfg["data"]["num_workers"]
     )
-    cfg["data"]["epochs"] = args.epochs if args.epochs else cfg["train"]["epochs"]
+    cfg["train"]["epochs"] = args.epochs if args.epochs else cfg["train"]["epochs"]
 
     cfg["train"]["loss_fn"] = args.loss_fn if args.loss_fn else cfg["train"]["loss_fn"]
 

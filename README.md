@@ -84,13 +84,25 @@ python train.py \
     --batch-size 256
 ```
 
+Vector Quantized Variational AutoEncoder
+```bash
+python train.py \
+    --config vqvae \
+    --device cuda \
+    --num-worker 4 \
+    --batch-size 32 \
+    --epochs 10 \
+    --data-path /kaggle/input/coco-2017-dataset/coco2017/train2017 \
+    --wandb-key <WANDB-KEY> # Optional
+```
+
 ## TODO:
     - [] Generated image push to wandb along with ground truth.
-    - [] Add perceptual loss
     - [] Image completion task
     - [] Sketch to Realistic Image Generation
 
 ## Completed:
+    - [x] Add perceptual loss
     - [x] Vector Quantized Variational AutoEncoder
     - [x] Code Base is ready to test different architectures
     - [x] Tried Auto Encoder: Able to see decent results only in compressed image generation, but it failed to generate any image from random noise.

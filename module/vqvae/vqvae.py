@@ -11,8 +11,11 @@ class VQVAE(torch.nn.Module):
         self.cfg = cfg
         self.encoder = ImageEncoder(cfg)
         self.codebook = Codebook(cfg)
+        self.k = cfg["model"]["codebook"]["k"]
         self.decoder = Decoder(cfg)
         self.act = torch.nn.Tanh()
+
+        self.penalty_weight = 0.25
         if self.cfg["model"]["enable_perceptual"]:
             self.perp_loss_fn = VGGPerceptualLoss()
 
@@ -42,9 +45,15 @@ class VQVAE(torch.nn.Module):
         perp_loss = 0
         z_h = self.encoder(x)
         z_h, discrete_h, codebook_loss = self.codebook(z_h)
+
         x_h = self.act(self.decoder(z_h))
         x_h = self.decoder(z_h)
         reco_loss = self.reconstruction_loss(x, x_h)
+
+        # Entropy loss (optional)
+        code_usage = torch.bincount(discrete_h.flatten(), minlength=self.k)
+        unused_vectors = (code_usage == 0).float().sum()
+        usage_loss = unused_vectors  # Encourage exploration
 
         if self.cfg["model"]["enable_perceptual"]:
             perp_loss = self.perp_loss_fn(
@@ -54,4 +63,5 @@ class VQVAE(torch.nn.Module):
                 style_layers=[],
             )
         reco_loss += perp_loss
-        return x_h, (codebook_loss, reco_loss)
+        # reco_loss += usage_loss * self.penalty_weight
+        return x_h, (codebook_loss, reco_loss, usage_loss)

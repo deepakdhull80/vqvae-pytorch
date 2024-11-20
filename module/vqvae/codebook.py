@@ -10,23 +10,39 @@ class Codebook(torch.nn.Module):
         self.k = cfg["model"]["codebook"]["k"]
         self.dim = cfg["model"]["codebook"]["dim"]
         self.beta = cfg["model"]["codebook"]["commitment_coefficient"]
-        self.lookup_table = torch.nn.parameter.Parameter(
-            data=torch.randn(self.k, self.dim)
-        )
 
+        self.register_buffer("lookup_table", torch.randn(self.k, self.dim))
+        self.register_buffer("cluster_size", torch.zeros(self.k))
+
+        torch.nn.init.xavier_uniform_(self.lookup_table)
         # EMA
         self.enable_ema_update = False
         self.decay = 0.99  # EMA decay rate
         self.epsilon = 1e-5  # Small constant to prevent divide-by-zero errors
 
     def update_codebook(self, x, indices):
-        one_hot = torch.nn.functional.one_hot(indices, num_classes=self.k).type(x.dtype)
-        count = one_hot.sum(dim=0)
-        count = torch.max(count, torch.tensor(self.epsilon, device=x.device))
+        x = x.permute(0, 2, 3, 1).contiguous()
 
-        updated_lookup = (one_hot.T @ x) / count.unsqueeze(1)
-        self.lookup_table.data = (
-            self.decay * self.lookup_table.data + (1 - self.decay) * updated_lookup
+        b, w, h, d = x.shape
+        x = x.view(-1, d)
+        indices = indices.view(-1)
+
+        one_hot_assignments = torch.nn.functional.one_hot(indices, self.k).float()
+
+        new_cluster_size = one_hot_assignments.sum(dim=0)
+        self.cluster_size = (
+            self.decay * self.cluster_size + (1 - self.decay) * new_cluster_size
+        )
+
+        weighted_sums = one_hot_assignments.T @ x  # Shape: (num_codebook_vectors, d)
+        self.lookup_table = (
+            self.decay * self.lookup_table + (1 - self.decay) * weighted_sums
+        )
+
+        n = self.cluster_size.sum()
+        cluster_size_norm = (self.cluster_size + self.epsilon) / (n + self.epsilon) * n
+        self.lookup_table = self.lookup_table / cluster_size_norm.unsqueeze(1).clamp(
+            min=self.epsilon
         )
 
     def codebook_loss(
@@ -50,8 +66,7 @@ class Codebook(torch.nn.Module):
 
         x_e = self.lookup_table[q_x].view(b, h, w, d).permute(0, 3, 1, 2).contiguous()
         codebook_loss = self.codebook_loss(x, x_e, q_x)
-
-        x = x + (x - x_e).detach()
+        # x = x + (x - x_e).detach()
 
         q_x = q_x.view(b, h, w)
         return x, q_x, codebook_loss
