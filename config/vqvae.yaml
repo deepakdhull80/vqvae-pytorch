@@ -1,4 +1,4 @@
-img_shape: 256
+img_shape: 128
 random_seed: 7
 generate_samples: true
 data:
@@ -18,7 +18,7 @@ train:
   optim: 'Adam'
   optim_params:
     lr: 0.0002
-    betas: [0.9, 0.999]
+    # betas: [0.9, 0.999]
     amsgrad: true
     weight_decay: 0.0001
   epochs: 50
@@ -31,7 +31,7 @@ train:
 
 model:
   name: "vq-vae"
-  enable_perceptual: true
+  enable_perceptual: false
   export_path: "/tmp/model.pt"
   # Conv formula x = [(i - w + 2*p)/s] + 1
   # Conv transpose formula i = (x-1)*s + w - 2*p
@@ -41,15 +41,15 @@ model:
       - name: 'conv2d'
         param:
           in_channels: 3
-          out_channels: 128
+          out_channels: 32
           kernel_size: 4
           stride: 2
           padding: 1
     # 64
       - name: 'conv2d'
         param:
-          in_channels: 128
-          out_channels: 128
+          in_channels: 32
+          out_channels: 64
           kernel_size: 4
           stride: 2
           padding: 1
@@ -64,23 +64,23 @@ model:
     # 32
       - name: 'resnet'
         repeat: 2
-        dim: 128
+        dim: 64
     # 32
   codebook:
-    k: 512
-    dim: 128
-    commitment_coefficient: 0.5
+    k: 512 
+    dim: 64
+    commitment_coefficient: 0.25
 
   decoder:
     layers:
       - name: 'resnet'
         repeat: 2
-        dim: 128
+        dim: 64
       # 32
       - name: 'conv2d_transpose'
         param:
-          in_channels: 128
-          out_channels: 128
+          in_channels: 64
+          out_channels: 32
           kernel_size: 4
           stride: 2
           padding: 1
@@ -95,7 +95,7 @@ model:
       # 64
       - name: 'conv2d_transpose'
         param:
-          in_channels: 128
+          in_channels: 32
           out_channels: 3
           kernel_size: 4
           stride: 2

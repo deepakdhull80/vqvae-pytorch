@@ -12,10 +12,10 @@ class Codebook(torch.nn.Module):
         self.beta = cfg["model"]["codebook"]["commitment_coefficient"]
 
         self.register_buffer("lookup_table", torch.randn(self.k, self.dim))
-        self.register_buffer("cluster_size", torch.zeros(self.k))
+        torch.nn.init.xavier_normal_(self.lookup_table)
 
-        torch.nn.init.xavier_uniform_(self.lookup_table)
         # EMA
+        self.register_buffer("cluster_size", torch.zeros(self.k))
         self.enable_ema_update = False
         self.decay = 0.99  # EMA decay rate
         self.epsilon = 1e-5  # Small constant to prevent divide-by-zero errors
@@ -66,7 +66,9 @@ class Codebook(torch.nn.Module):
 
         x_e = self.lookup_table[q_x].view(b, h, w, d).permute(0, 3, 1, 2).contiguous()
         codebook_loss = self.codebook_loss(x, x_e, q_x)
-        # x = x + (x - x_e).detach()
+
+        # skip the gradiant from the codebook
+        x = x + (x - x_e).detach()
 
         q_x = q_x.view(b, h, w)
         return x, q_x, codebook_loss
