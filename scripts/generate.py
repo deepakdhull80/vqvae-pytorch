@@ -8,6 +8,8 @@ from torchvision.transforms import Compose, Lambda, Resize, ToPILImage
 from typing import Dict, List, Optional
 import random
 
+random.seed(777)
+
 root_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(root_folder)
 
@@ -97,7 +99,10 @@ class ModelHelper(metaclass=Singleton):
         if not os.path.exists(val_path):
             return None
         val_image_paths = os.listdir(f"{val_path}/")
-        sample_item_paths = random.sample(val_image_paths, k=n_items)
+        sample_item_paths = random.sample(
+            val_image_paths,
+            k=n_items,
+        )
         val_img_iter = COCODataset(
             self.cfg,
             data_prefix_path=self.cfg["data"]["val_data_prefix_path"],
@@ -108,7 +113,6 @@ class ModelHelper(metaclass=Singleton):
         reco_imgs = []
         for img, _ in val_img_iter:
             r, _ = self.model.generate(img.to(self.device).unsqueeze(0))
-            r = r * 0.5 + 0.5
             r = r.squeeze(0).cpu()
             r = self.to_pil(r)
             reco_imgs.append(r)

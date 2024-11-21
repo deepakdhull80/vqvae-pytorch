@@ -113,3 +113,5 @@ python train.py \
 ### References
 1. Understanding Variational Autoencoders [Link](https://towardsdatascience.com/understanding-variational-autoencoders-vaes-f70510919f73)
 2. Variational Autoencoder Demystified With PyTorch Implementation [Link](https://towardsdatascience.com/variational-autoencoder-demystified-with-pytorch-implementation-3a06bee395ed)
+3. Neural Discrete Representation Learning [Link](https://arxiv.org/pdf/1711.00937)
+4. Straightening Out the Straight-Through Estimator: Overcoming Optimization Challenges in Vector Quantized Networks[Link](https://minyoungg.github.io/vqtorch/assets/draft_050523.pdf)

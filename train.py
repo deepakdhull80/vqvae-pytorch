@@ -108,18 +108,18 @@ def per_epoch(
 
         if not WANDB_ENABLE:
             iters.set_description(
-                f"[{mode}] loss: {_loss: .3f} avgLoss: {loss.avg} codebook-entropy: {codebook_usage}"
+                f"[{mode}] loss: {_loss: .3f} avgLoss: {loss.avg} perplexity: {codebook_usage}"
             )
         else:
             if idx % 50 == 0:
                 custom_print(
-                    f"[{mode}] step: {idx}, loss: {_loss: .3f}, avgLoss: {loss.avg} codebook-entropy: {codebook_usage}"
+                    f"[{mode}] step: {idx}, loss: {_loss: .3f}, avgLoss: {loss.avg} perplexity: {codebook_usage}"
                 )
                 if WANDB_ENABLE:
                     wandb.log({f"{mode}-step-loss-avg": loss.avg})
                     wandb.log({f"{mode}-step-loss": _loss})
                     if codebook_usage is not None:
-                        wandb.log({f"{mode}-step-codebook-entropy": codebook_usage})
+                        wandb.log({f"{mode}-step-perplexity": codebook_usage})
     if WANDB_ENABLE:
         wandb.log({f"{mode}-loss": loss.avg})
     return loss.avg
@@ -186,7 +186,7 @@ def execute(cfg: Dict, device: str, debug=False):
                     cfg=cfg, model_chkpt_path=cfg["model"]["export_path"], device="cpu"
                 )
                 model_helper.refresh_weights(model)
-                imgs = model_helper.generate_and_save(n_items=4, file_prefix=epoch)
+                imgs = model_helper.generate_and_save(n_items=8, file_prefix=epoch)
                 if imgs is not None and WANDB_ENABLE:
                     wandb.log(
                         {
