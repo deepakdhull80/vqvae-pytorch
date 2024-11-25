@@ -37,8 +37,8 @@ class Transformer(object):
             self.augments = Compose(
                 [
                     Resize(size=(cfg["img_shape"], cfg["img_shape"]), antialias=True),
-                    # Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-                    RandomHorizontalFlip(p=cfg["data"]["augmentation_probability"]),
+                    Normalize(**cfg["data"]["transform"]["normalize"]),
+                    # RandomHorizontalFlip(p=cfg["data"]["augmentation_probability"]),
                     # RandomVerticalFlip(p=cfg["data"]["augmentation_probability"]),
                     # RandomAdjustSharpness(2, p=cfg["data"]["augmentation_probability"]),
                     # RandomAutocontrast(p=cfg["data"]["augmentation_probability"]),
@@ -48,7 +48,7 @@ class Transformer(object):
             self.augments = Compose(
                 [
                     Resize(size=(cfg["img_shape"], cfg["img_shape"]), antialias=True),
-                    # Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+                    Normalize(**cfg["data"]["transform"]["normalize"]),
                 ]
             )
 
@@ -73,9 +73,8 @@ class COCODataset(Dataset):
         self.transform = Transformer(cfg, flag=disable_tansforms)
 
     def scale_img(self, img: torch.Tensor) -> torch.Tensor:
-        return (img / 255.0 - 0.5) / 0.5
-        # return img / 255.0
-        # (x * 0.5 + 0.5) * 255
+        # return (img / 255.0 - 0.5) / 0.5
+        return img / 255.0
 
     def correct_img_channels(self, image: torch.Tensor) -> torch.Tensor:
         if len(image.shape) == 2:
@@ -90,9 +89,9 @@ class COCODataset(Dataset):
         path = f"{self.data_prefix_path}/{file}"
         img = torchvision.io.read_image(path)
         img = self.correct_img_channels(img)
-        img = self.transform(img)
-        img = img.float()
+
         img = self.scale_img(img)
+        img = self.transform(img)
         return img, torch.tensor(1)
 
     def __len__(self):

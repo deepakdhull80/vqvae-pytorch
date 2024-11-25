@@ -9,104 +9,59 @@ class Codebook(torch.nn.Module):
         super().__init__()
         self.k = cfg["model"]["codebook"]["k"]
         self.dim = cfg["model"]["codebook"]["dim"]
-        self.codebook_dim = self.dim // 2
         self.beta = cfg["model"]["codebook"]["commitment_coefficient"]
-        self.pre_quant_layer = torch.nn.Conv2d(self.dim, self.dim // 2, kernel_size=1)
-        self.post_quant_layer = torch.nn.Conv2d(self.dim // 2, self.dim, kernel_size=1)
 
-        self.register_buffer("lookup_table", torch.randn(self.k, self.codebook_dim))
-        torch.nn.init.xavier_normal_(self.lookup_table)
-
-        # EMA
-        self.register_buffer("cluster_size", torch.zeros(self.k))
-        self.enable_ema_update = False
-        self.decay = 0.99  # EMA decay rate
-        self.epsilon = 1e-5  # Small constant to prevent divide-by-zero errors
-
-    def update_codebook(self, x, indices):
-        x = x.permute(0, 2, 3, 1).contiguous()
-
-        b, w, h, d = x.shape
-        x = x.view(-1, d)
-        indices = indices.view(-1)
-
-        one_hot_assignments = torch.nn.functional.one_hot(indices, self.k).float()
-
-        new_cluster_size = one_hot_assignments.sum(dim=0)
-        self.cluster_size = (
-            self.decay * self.cluster_size + (1 - self.decay) * new_cluster_size
-        )
-
-        weighted_sums = one_hot_assignments.T @ x  # Shape: (num_codebook_vectors, d)
-        self.lookup_table = (
-            self.decay * self.lookup_table + (1 - self.decay) * weighted_sums
-        )
-
-        n = self.cluster_size.sum()
-        cluster_size_norm = (self.cluster_size + self.epsilon) / (n + self.epsilon) * n
-        self.lookup_table = self.lookup_table / cluster_size_norm.unsqueeze(1).clamp(
-            min=self.epsilon
-        )
-
-    def codebook_loss(
-        self, x: torch.Tensor, x_e: torch.Tensor, q_x: torch.Tensor
-    ) -> torch.Tensor:
-        codebook_loss = 0
-        if self.enable_ema_update:
-            self.update_codebook(x, q_x)
-        else:
-            codebook_loss = torch.mean((x.detach() - x_e) ** 2)
-        commitment_loss = self.beta * torch.mean((x - x_e.detach()) ** 2)
-        return (1 - self.beta) * codebook_loss + commitment_loss
+        self.register_buffer("lookup_table", torch.empty(self.k, self.dim))
+        torch.nn.init.uniform_(self.lookup_table, -1 / self.k, 1 / self.k)
 
     @torch.no_grad()
-    def decode(self, q_x, x=None):
+    def decode(self, q_x):
         b, w, h = q_x.shape
-        q_x = q_x.view(b, -1)
-        x_e = (
-            self.lookup_table[q_x]
-            .view(b, h, w, self.codebook_dim)
-            .permute(0, 3, 1, 2)
-            .contiguous()
+        q_x = q_x.view(-1, 1)
+        encodings = torch.zeros(q_x.shape[0], self.k, device=q_x.device)
+        encodings.scatter_(1, q_x, 1)
+
+        # Quantize and unflatten
+        quantized = torch.matmul(encodings, self.lookup_table).view(b, w, h, -1)
+        return quantized.permute(0, 3, 1, 2).contiguous()
+
+    def forward(self, inputs: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+
+        inputs = inputs.permute(0, 2, 3, 1).contiguous()
+        input_shape = inputs.shape
+
+        # Flatten input
+        flat_input = inputs.view(-1, self.dim)
+
+        # Calculate distances
+        distances = (
+            torch.sum(flat_input**2, dim=1, keepdim=True)
+            + torch.sum(self.lookup_table**2, dim=1)
+            - 2 * torch.matmul(flat_input, self.lookup_table.t())
         )
-        if x is not None:
-            x = x + (x - x_e)
-        else:
-            x = x_e
-        x = self.post_quant_layer(x)
-        return x
 
-    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        b, d, h, w = x.shape
-        x = self.pre_quant_layer(x)
+        # Encoding
+        encoding_indices = torch.argmin(distances, dim=1).unsqueeze(1)
+        encodings = torch.zeros(encoding_indices.shape[0], self.k, device=inputs.device)
+        encodings.scatter_(1, encoding_indices, 1)
 
-        _x = x.permute(0, 2, 3, 1).contiguous().view(-1, self.codebook_dim)
+        # Quantize and unflatten
+        quantized = torch.matmul(encodings, self.lookup_table).view(input_shape)
 
-        distances = torch.cdist(_x, self.lookup_table)
-        q_x = torch.argmin(distances, dim=1)
+        # Loss
+        e_latent_loss = F.mse_loss(quantized.detach(), inputs)
+        q_latent_loss = F.mse_loss(quantized, inputs.detach())
+        loss = q_latent_loss + self.beta * e_latent_loss
 
-        x_e = (
-            self.lookup_table[q_x]
-            .view(b, h, w, self.codebook_dim)
-            .permute(0, 3, 1, 2)
-            .contiguous()
-        )
-        codebook_loss = self.codebook_loss(x, x_e, q_x)
+        quantized = inputs + (quantized - inputs).detach()
+        avg_probs = torch.mean(encodings, dim=0)
+        perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
 
-        # skip the gradiant from the codebook
-        x = x + (x - x_e).detach()
-        x = self.post_quant_layer(x)
-
-        q_x = q_x.view(b, h, w)
-
-        # Entropy loss (optional)
-        e_mean = (
-            F.one_hot(q_x.view(b, -1), num_classes=self.k)
-            .view(-1, self.k)
-            .float()
-            .mean(0)
-        )
-        perplexity = torch.exp(-torch.sum(e_mean * torch.log(e_mean + 1e-10)))
-
-        config = {"loss": codebook_loss, "q": q_x, "perplexity": perplexity}
-        return x, config
+        config = {
+            "loss": loss,
+            "q": encoding_indices.view(input_shape[:-1]),
+            "perplexity": perplexity,
+            "codebook_loss": q_latent_loss,
+            "commitment_loss": e_latent_loss,
+        }
+        return quantized.permute(0, 3, 1, 2).contiguous(), config

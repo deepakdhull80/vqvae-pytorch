@@ -66,16 +66,19 @@ def per_epoch(
 
     model = model.train() if train else model.eval()
     loss = AverageMeter()
+    perplexity_m = AverageMeter()
+    # reconstruct_loss_m = AverageMeter()
+    codebook_loss_m = AverageMeter()
 
     mode = "Train" if train else "Eval"
     for idx, batch in iters:
         _loss = None
-        codebook_usage = None
+        codebook_cfg = None
         img, label = batch[0].to(device), batch[1].to(device)
         pred, m_loss = model(img, label)
         if type(m_loss) == tuple:
             # VQVAE
-            codebook_loss, reconstruct_loss, codebook_usage = m_loss
+            codebook_loss, reconstruct_loss, codebook_cfg = m_loss
             _loss = reconstruct_loss + codebook_loss
         if train:
             if _loss is None:
@@ -105,23 +108,40 @@ def per_epoch(
             # compute metrics
             _loss = _loss.detach().cpu().item()
             loss.update(_loss)
+            if codebook_cfg is not None:
+                codebook_loss_m.update(
+                    codebook_cfg["codebook_loss"].detach().cpu().item()
+                )
+                perplexity_m.update(codebook_cfg["perplexity"])
 
         if not WANDB_ENABLE:
-            iters.set_description(
-                f"[{mode}] loss: {_loss: .3f} avgLoss: {loss.avg} perplexity: {codebook_usage}"
-            )
+            if codebook_cfg is not None:
+                iters.set_description(
+                    f"[{mode}] loss: {_loss: .4f} avgLoss: {loss.avg: .4f} perplexity: {perplexity_m.avg: .2f} codebook_loss: {codebook_loss_m.avg: .4f}"
+                )
+
+            else:
+                iters.set_description(
+                    f"[{mode}] loss: {_loss: .3f} avgLoss: {loss.avg}"
+                )
         else:
             if idx % 50 == 0:
                 custom_print(
-                    f"[{mode}] step: {idx}, loss: {_loss: .3f}, avgLoss: {loss.avg} perplexity: {codebook_usage}"
+                    f"[{mode}] loss: {_loss: .4f} avgLoss: {loss.avg: .4f} perplexity: {perplexity_m.avg: .2f} codebook_loss: {codebook_loss_m.avg: .4f}"
                 )
                 if WANDB_ENABLE:
                     wandb.log({f"{mode}-step-loss-avg": loss.avg})
                     wandb.log({f"{mode}-step-loss": _loss})
-                    if codebook_usage is not None:
-                        wandb.log({f"{mode}-step-perplexity": codebook_usage})
+                    if codebook_cfg is not None and "perplexity" in codebook_cfg:
+                        wandb.log(
+                            {f"{mode}-step-perplexity": codebook_cfg["perplexity"]}
+                        )
     if WANDB_ENABLE:
         wandb.log({f"{mode}-loss": loss.avg})
+        wandb.log({f"{mode}-perplexity": perplexity_m.avg})
+    else:
+        custom_print({f"{mode}-loss": loss.avg})
+        custom_print({f"{mode}-perplexity": perplexity_m.avg})
     return loss.avg
 
 
@@ -133,7 +153,7 @@ def execute(cfg: Dict, device: str, debug=False):
     elif ModelEnum.VARIATIONAL_AUTO_ENCODER.value == cfg["model"]["name"]:
         model = VariationalAutoEncoder(cfg)
     elif ModelEnum.VQVAE.value == cfg["model"]["name"]:
-        model = VQVAE(cfg)
+        model = VQVAE(cfg, device=device)
     else:
         raise ValueError(
             f"Model {cfg['model']['name']} not supported. Available models are {ModelEnum.list()}"
@@ -172,6 +192,7 @@ def execute(cfg: Dict, device: str, debug=False):
         train_loss = per_epoch(
             cfg, model, train_dl, optimizer, scheduler, loss_fn, device, True
         )
+        continue
         logging.info("Start Validating Step")
         val_loss = per_epoch(
             cfg, model, val_dl, optimizer, scheduler, loss_fn, device, False

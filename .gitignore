@@ -171,3 +171,5 @@ artifacts
 output
 checkpoints
 nb/Untitled.ipynb
+data/*
+*.ipynb

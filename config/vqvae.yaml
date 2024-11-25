@@ -1,11 +1,10 @@
-img_shape: 256
+img_shape: 32
 random_seed: 7
 generate_samples: true
 data:
-  clz: "COCODataset"
-  num_classes: 1024
-  batch_size: 32
-  # batch_size: 8
+  clz: "CIFAR10Dataset"
+  num_classes: 10
+  batch_size: 256
   num_workers: 4
   # data_prefix_path: "REPLACE_WITH_DATA_PATH"
   # val_data_prefix_path: "REPLACE_WITH_DATA_PATH"
@@ -15,7 +14,7 @@ data:
 train:
   optim: 'Adam'
   optim_params:
-    lr: 0.0002
+    lr: 0.001
     # betas: [0.9, 0.999]
     amsgrad: true
     weight_decay: 0.0001
@@ -29,73 +28,96 @@ train:
 
 model:
   name: "vq-vae"
-  enable_perceptual: true
-  export_path: "/tmp/model.pt"
+  enable_perceptual: false
+  export_path: "/tmp/model_cifar.pt"
   # Conv formula x = [(i - w + 2*p)/s] + 1
   # Conv transpose formula i = (x-1)*s + w - 2*p
   encoder:
     layers:
-    # 128
       - name: 'conv2d'
+        activation: 'ReLU'
         param:
           in_channels: 3
-          out_channels: 32
-          kernel_size: 4
-          stride: 2
-          padding: 1
-    # 64
-      - name: 'conv2d'
-        param:
-          in_channels: 32
           out_channels: 64
           kernel_size: 4
           stride: 2
           padding: 1
+
+      - name: 'conv2d'
+        activation: 'ReLU'
+        param:
+          in_channels: 64
+          out_channels: 128
+          kernel_size: 4
+          stride: 2
+          padding: 1
       
-      # - name: 'conv2d'
-      #   param:
-      #     in_channels: 128
-      #     out_channels: 128
-      #     kernel_size: 4
-      #     stride: 2
-      #     padding: 1
-    # 32
+      - name: 'conv2d'
+        param:
+          in_channels: 128
+          out_channels: 128
+          kernel_size: 3
+          stride: 1
+          padding: 1
+
       - name: 'resnet'
-        repeat: 2
-        dim: 64
+        param:
+          in_channels: 128
+          num_hiddens: 128
+          num_residual_layers: 2
+          num_residual_hiddens: 32
+
+  pre_codebook:
+    param:
+      in_channels: 128
+      out_channels: 64
+      kernel_size: 1
+      stride: 1
+      padding: 0
     # 32
   codebook:
     k: 512 
     dim: 64
-    commitment_coefficient: 0.05
+    commitment_coefficient: 0.25
+
+  # post_codebook:
+  #   param:
+  #     in_channels: 64
+  #     out_channels: 128
+  #     kernel_size: 1
+  #     stride: 1
+  #     padding: 0
 
   decoder:
     layers:
-      - name: 'resnet'
-        repeat: 2
-        dim: 64
-      # 32
-      - name: 'conv2d_transpose'
+      - name: 'conv2d'
         param:
           in_channels: 64
-          out_channels: 32
+          out_channels: 128
+          kernel_size: 3
+          stride: 1
+          padding: 1
+
+      - name: 'resnet'
+        param:
+          in_channels: 128
+          num_hiddens: 128
+          num_residual_layers: 2
+          num_residual_hiddens: 32
+
+      - name: 'conv2d_transpose'
+        activation: 'ReLU'
+        param:
+          in_channels: 128
+          out_channels: 64
           kernel_size: 4
           stride: 2
           padding: 1
 
-      # - name: 'conv2d_transpose'
-      #   param:
-      #     in_channels: 128
-      #     out_channels: 128
-      #     kernel_size: 4
-      #     stride: 2
-      #     padding: 1
-      # 64
       - name: 'conv2d_transpose'
         param:
-          in_channels: 32
+          in_channels: 64
           out_channels: 3
           kernel_size: 4
           stride: 2
           padding: 1
-      # 128
