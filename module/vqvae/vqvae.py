@@ -9,15 +9,15 @@ from module.loss import VGGPerceptualLoss
 
 
 class VQVAE(torch.nn.Module):
-    def __init__(self, cfg: dict) -> None:
+    def __init__(self, cfg: dict, device: str = "cpu") -> None:
         super().__init__()
         self.cfg = cfg
         self.encoder = ImageEncoder(cfg)
         self.codebook = Codebook(cfg)
-        # self.codebook.to("mps")
+        self.codebook.to(device)
         self.k = cfg["model"]["codebook"]["k"]
         self.decoder = Decoder(cfg)
-        self.act = torch.nn.Tanh()
+        self.act = torch.nn.Identity()
 
         self.penalty_weight = 0.25
         if self.cfg["model"]["enable_perceptual"]:
@@ -77,4 +77,4 @@ class VQVAE(torch.nn.Module):
             )
         reco_loss += perp_loss
         # reco_loss += usage_loss * self.penalty_weight
-        return x_h, (vq_config["loss"], reco_loss, vq_config["perplexity"])
+        return x_h, (vq_config["loss"], reco_loss), vq_config

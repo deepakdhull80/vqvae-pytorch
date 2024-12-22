@@ -94,7 +94,7 @@ class Codebook(torch.nn.Module):
         codebook_loss = self.codebook_loss(x, x_e, q_x)
 
         # skip the gradiant from the codebook
-        x = x + (x - x_e).detach()
+        x = x + (x_e - x).detach()
         x = self.post_quant_layer(x)
 
         q_x = q_x.view(b, h, w)
