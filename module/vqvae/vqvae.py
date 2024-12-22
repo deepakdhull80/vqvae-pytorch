@@ -14,7 +14,7 @@ class VQVAE(torch.nn.Module):
         self.cfg = cfg
         self.encoder = ImageEncoder(cfg)
         self.codebook = Codebook(cfg)
-        self.codebook.to("mps")
+        # self.codebook.to("mps")
         self.k = cfg["model"]["codebook"]["k"]
         self.decoder = Decoder(cfg)
         self.act = torch.nn.Tanh()
